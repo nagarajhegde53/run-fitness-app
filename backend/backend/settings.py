@@ -146,6 +146,7 @@ CORS_ALLOWED_ORIGINS = [
      "http://localhost:3000",  # Common for React
     "http://127.0.0.1:5173",
       "https://onrender.com",
+      "https://run-fitness-app-1.onrender.com",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
