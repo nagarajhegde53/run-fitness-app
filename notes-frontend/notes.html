@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>RunTrack</title>
+
+    <link rel="stylesheet" href="css/notes.css">
+</head>
+
+<body>
+
+    <!-- Background decoration -->
+    <div class="bg-glow glow-one"></div>
+    <div class="bg-glow glow-two"></div>
+
+    <main class="app">
+
+        <!-- HEADER -->
+        <header class="topbar">
+
+            <div class="brand">
+                <div class="brand-icon">🏃</div>
+
+                <div>
+                    <h1>RunTrack</h1>
+                    <p>Your running dashboard</p>
+                </div>
+            </div>
+
+            <button class="profile-btn" id="profileBtn">
+                <span id="username">You</span>
+                <span class="profile-dot"></span>
+            </button>
+
+        </header>
+
+
+        <!-- HERO -->
+        <section class="hero">
+
+            <div class="hero-content">
+
+                <span class="eyebrow">
+                    TODAY'S RUN
+                </span>
+
+                <h2>
+                    Ready to
+                    <span>run?</span>
+                </h2>
+
+                <p>
+                    Choose your target distance and start tracking
+                    your run using GPS.
+                </p>
+
+            </div>
+
+            <div class="hero-run-icon">
+                🏃‍♂️
+            </div>
+
+        </section>
+
+
+        <!-- DISTANCE CARD -->
+        <section class="card distance-card">
+
+            <div class="section-heading">
+
+                <div>
+                    <span class="small-label">TARGET DISTANCE</span>
+                    <h3>Select your challenge</h3>
+                </div>
+
+                <div class="selected-distance">
+                    <strong id="selectedDistance">100</strong>
+                    <span id="selectedUnit">m</span>
+                </div>
+
+            </div>
+
+
+            <div class="distance-grid">
+
+                <button
+                    class="distance-option active"
+                    data-distance="100">
+                    <strong>100</strong>
+                    <span>meters</span>
+                </button>
+
+                <button
+                    class="distance-option"
+                    data-distance="200">
+                    <strong>200</strong>
+                    <span>meters</span>
+                </button>
+
+                <button
+                    class="distance-option"
+                    data-distance="500">
+                    <strong>500</strong>
+                    <span>meters</span>
+                </button>
+
+                <button
+                    class="distance-option"
+                    data-distance="1000">
+                    <strong>1</strong>
+                    <span>kilometer</span>
+                </button>
+
+                <button
+                    class="distance-option"
+                    data-distance="2000">
+                    <strong>2</strong>
+                    <span>kilometers</span>
+                </button>
+
+            </div>
+
+
+            <button class="start-btn" id="startRunBtn">
+
+                <span class="start-icon">▶</span>
+
+                <span>
+                    Start Run
+                </span>
+
+            </button>
+
+        </section>
+
+
+        <!-- LIVE RUN PANEL -->
+        <section
+            class="card live-card"
+            id="liveRunCard"
+            hidden>
+
+            <div class="live-header">
+
+                <div>
+                    <span class="live-indicator"></span>
+                    LIVE RUN
+                </div>
+
+                <span id="gpsStatus">
+                    Getting GPS...
+                </span>
+
+            </div>
+
+
+            <div class="live-main">
+
+                <div class="timer-box">
+
+                    <span class="metric-label">
+                        TIME
+                    </span>
+
+                    <div id="timer">
+                        00:00.00
+                    </div>
+
+                </div>
+
+
+                <div class="distance-live-box">
+
+                    <span class="metric-label">
+                        DISTANCE
+                    </span>
+
+                    <div>
+                        <strong id="liveDistance">
+                            0
+                        </strong>
+
+                        <span>m</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="progress-container">
+
+                <div class="progress-info">
+
+                    <span>
+                        Progress
+                    </span>
+
+                    <span>
+                        <strong id="progressPercent">
+                            0
+                        </strong>%
+                    </span>
+
+                </div>
+
+                <div class="progress-bar">
+
+                    <div
+                        class="progress-fill"
+                        id="progressFill">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <button
+                class="stop-btn"
+                id="stopRunBtn">
+
+                ■ Stop Run
+
+            </button>
+
+        </section>
+
+
+        <!-- STATS -->
+        <section class="stats-grid">
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    🏆
+                </div>
+
+                <div>
+
+                    <span>
+                        Best 100m
+                    </span>
+
+                    <strong id="best100">
+                        --
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    ⚡
+                </div>
+
+                <div>
+
+                    <span>
+                        Best 200m
+                    </span>
+
+                    <strong id="best200">
+                        --
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    🔥
+                </div>
+
+                <div>
+
+                    <span>
+                        Best 500m
+                    </span>
+
+                    <strong id="best500">
+                        --
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    🚀
+                </div>
+
+                <div>
+
+                    <span>
+                        Best 1km
+                    </span>
+
+                    <strong id="best1000">
+                        --
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- RUN HISTORY -->
+        <section class="card history-card">
+
+            <div class="section-heading">
+
+                <div>
+                    <span class="small-label">
+                        ACTIVITY
+                    </span>
+
+                    <h3>
+                        Recent runs
+                    </h3>
+                </div>
+
+                <button
+                    class="refresh-btn"
+                    id="refreshRunsBtn">
+                    ↻
+                </button>
+
+            </div>
+
+
+            <div id="runHistory">
+
+                <div class="empty-state">
+
+                    <div>
+                        🏃
+                    </div>
+
+                    <p>
+                        No runs yet
+                    </p>
+
+                    <span>
+                        Complete your first run and it'll appear here.
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- GPS INFORMATION -->
+        <section class="gps-info">
+
+            <div class="gps-icon">
+                ◎
+            </div>
+
+            <div>
+
+                <strong>
+                    GPS tracking
+                </strong>
+
+                <p>
+                    Keep location permission enabled while running.
+                    Your browser will calculate distance from GPS coordinates.
+                </p>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="js/notes.js"></script>
+
+</body>
+</html>

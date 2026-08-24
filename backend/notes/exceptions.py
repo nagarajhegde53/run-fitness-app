@@ -1,0 +1,2 @@
+class NoteLimitExceeded(Exception):
+    pass
