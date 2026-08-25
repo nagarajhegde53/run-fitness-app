@@ -2,7 +2,8 @@
 // BACKEND
 // ======================================================
 
-const API_URL = "http://127.0.0.1:8000";
+// const API_URL = "http://127.0.0.1:8000";
+const API_URL = "https://run-fitness-app.onrender.com";
 
 
 // ======================================================
@@ -58,6 +59,8 @@ let timerInterval = null;
 let isRunning = false;
 
 let watchId = null;
+// gps acccuracy
+// let lastGPSAccuracy = null;
 
 
 // ======================================================
@@ -640,6 +643,7 @@ function handleGPSPosition(position) {
     const timestamp =
         position.timestamp;
 
+   
 
     console.log(
         "📍 GPS:",
@@ -1228,44 +1232,85 @@ function stopRun() {
 // FINISH
 // ======================================================
 
-function finishRun() {
+// async function finishRun() {
+
+//     if (!isRunning) {
+//         return;
+//     }
+
+
+//     const duration =
+//         Date.now() -
+//         startTime;
+
+
+
+//     console.log(
+//         "🏁 Target reached"
+//     );
+
+
+//     isRunning = false;
+
+
+//     stopTracking();
+
+
+//     alert(
+
+//         `🏁 Run complete!\n\n` +
+
+//         `Distance: ` +
+//         `${totalDistance.toFixed(1)} m\n` +
+
+//         `Time: ` +
+//         `${(duration / 1000).toFixed(2)} sec`
+
+//     );
+
+
+//     resetRun();
+
+// }
+
+async function finishRun() {
 
     if (!isRunning) {
         return;
     }
 
+    // Calculate final duration immediately
+    const duration = Date.now() - startTime;
 
-    const duration =
-        Date.now() -
-        startTime;
-
-
-    console.log(
-        "🏁 Target reached"
-    );
-
-
+    // Stop the run FIRST
     isRunning = false;
-
 
     stopTracking();
 
+    console.log("🏁 Target reached");
 
-    alert(
-
-        `🏁 Run complete!\n\n` +
-
-        `Distance: ` +
-        `${totalDistance.toFixed(1)} m\n` +
-
-        `Time: ` +
-        `${(duration / 1000).toFixed(2)} sec`
-
+    console.log(
+        "Distance:",
+        totalDistance.toFixed(1),
+        "m"
     );
 
+    console.log(
+        "Duration:",
+        (duration / 1000).toFixed(2),
+        "sec"
+    );
+
+    // Save completed run to backend
+    await saveRunToBackend(duration);
+
+    alert(
+        `🏁 Run complete!\n\n` +
+        `Distance: ${totalDistance.toFixed(1)} m\n` +
+        `Time: ${(duration / 1000).toFixed(2)} sec`
+    );
 
     resetRun();
-
 }
 
 
@@ -1340,3 +1385,70 @@ function resetRun() {
 updateTargetUI();
 
 resetRun();
+
+
+// save to backend 
+async function saveRunToBackend(duration) {
+
+    const data = {
+        target_distance: targetDistance,
+        actual_distance: Number(totalDistance.toFixed(2)),
+        duration: Number((duration / 1000).toFixed(2)),
+        // gps_accuracy: lastGPSAccuracy,
+        started_at: new Date(startTime).toISOString(),
+        finished_at: new Date().toISOString()
+    };
+
+    console.log("Sending run to backend:", data);
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/runs/`,
+            {
+                method: "POST",
+
+                credentials: "include",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrftoken
+                },
+
+                body: JSON.stringify(data)
+            }
+        );
+
+        const result = await response.json();
+
+        console.log(
+            "Backend response:",
+            result
+        );
+
+        if (!response.ok) {
+
+            console.error(
+                "Failed to save run:",
+                result
+            );
+
+            alert("Run finished, but couldn't save it.");
+
+            return;
+        }
+
+        console.log("✅ Run saved successfully!");
+
+    } catch (error) {
+
+        console.error(
+            "Backend connection error:",
+            error
+        );
+
+        alert(
+            "Run finished, but server couldn't be reached."
+        );
+    }
+}
