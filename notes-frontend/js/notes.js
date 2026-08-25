@@ -41,6 +41,7 @@ const API_URL = "http://127.0.0.1:8000";
 // ==============================
 // DOM elements
 // ==============================
+const MIN_MOVEMENT_DISTANCE = 3;
 const MAX_GPS_ACCURACY = 50; // meters
 const MAX_MOVEMENT_JUMP = 30; // meters per GPS update
 const distanceButtons =
@@ -140,57 +141,55 @@ function startRun() {
         "meters"
     );
 
-
     if (!navigator.geolocation) {
 
-        alert(
-            "GPS is not supported by this browser."
-        );
+        alert("GPS is not supported by this browser.");
 
         return;
     }
 
+    // Reset previous run state FIRST
+    totalDistance = 0;
+    currentPosition = null;
+    bestGpsAccuracy = null;
+
+    // Reset UI
+    document.getElementById("timer").textContent =
+        "00:00.00";
+
+    document.getElementById("liveDistance").textContent =
+        "0";
+
+    document.getElementById("progressPercent").textContent =
+        "0";
+
+    document.getElementById("progressFill").style.width =
+        "0%";
+
+    document.getElementById("gpsStatus").textContent =
+        "Getting GPS...";
+
+    // NOW start the clock
+    startTime = Date.now();
 
     liveRunCard.hidden = false;
 
     startRunBtn.disabled = true;
 
-
-    // Reset run state
-    totalDistance = 0;
-
-    currentPosition = null;
-    bestGpsAccuracy = null;
-
-    startTime = Date.now();
-
-
-    // Reset UI
-    resetRunUI();
-
-
-    // Start timer
     startTimer();
 
-
-    // Start GPS
-    watchId =
-        navigator.geolocation.watchPosition(
-            handlePosition,
-            handleGPSError,
-            {
-                enableHighAccuracy: true,
-                maximumAge: 0,
-                timeout: 10000
-            }
-        );
-
-
-    console.log(
-        "GPS tracking started"
+    watchId = navigator.geolocation.watchPosition(
+        handlePosition,
+        handleGPSError,
+        {
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 10000
+        }
     );
-}
 
+    console.log("GPS tracking started");
+}
 
 
 // start timer 
@@ -340,7 +339,17 @@ function handlePosition(position) {
             latitude,
             longitude
         );
+// Ignore tiny GPS drift
+if (distance < MIN_MOVEMENT_DISTANCE) {
 
+    console.log(
+        "Ignoring GPS drift:",
+        distance.toFixed(2),
+        "m"
+    );
+
+    return;
+}
 
     console.log(
         "Movement:",
@@ -403,31 +412,30 @@ function handleGPSError(error) {
 
     console.error("GPS Error:", error);
 
-   const gpsStatus =
-    document.getElementById("gpsStatus");
+    const gpsStatus =
+        document.getElementById("gpsStatus");
 
+    if (error.code === 1) {
 
-if (accuracy <= 10) {
+        gpsStatus.textContent =
+            "Location permission denied";
 
-    gpsStatus.textContent =
-        `GPS ±${Math.round(accuracy)}m • Excellent`;
+    } else if (error.code === 2) {
 
-} else if (accuracy <= 30) {
+        gpsStatus.textContent =
+            "Location unavailable";
 
-    gpsStatus.textContent =
-        `GPS ±${Math.round(accuracy)}m • Good`;
+    } else if (error.code === 3) {
 
-} else if (accuracy <= 50) {
+        gpsStatus.textContent =
+            "GPS timeout";
 
-    gpsStatus.textContent =
-        `GPS ±${Math.round(accuracy)}m • Fair`;
+    } else {
 
-} else {
-
-    gpsStatus.textContent =
-        `GPS ±${Math.round(accuracy)}m • Poor`;
-}}
-
+        gpsStatus.textContent =
+            "GPS error";
+    }
+}
 
 // update distance ui
 function updateDistanceUI() {
@@ -542,7 +550,6 @@ async function stopRun() {
     const duration =
         Date.now() - startTime;
 
-
     console.log(
         "Final distance:",
         totalDistance.toFixed(1),
@@ -555,10 +562,7 @@ async function stopRun() {
         "ms"
     );
 
-
-    // Save the partial run
     await saveRun(duration);
-
 
     alert(
         `Run stopped!\n\n` +
@@ -566,30 +570,29 @@ async function stopRun() {
         `Time: ${(duration / 1000).toFixed(2)} sec`
     );
 
-
     resetRunUI();
 }
 
 
 
 // reset ui
-function resetRunUI() {
+// function resetRunUI() {
 
-    document.getElementById("timer").textContent =
-        "00:00.00";
+//     document.getElementById("timer").textContent =
+//         "00:00.00";
 
-    document.getElementById("liveDistance").textContent =
-        "0";
+//     document.getElementById("liveDistance").textContent =
+//         "0";
 
-    document.getElementById("progressPercent").textContent =
-        "0";
+//     document.getElementById("progressPercent").textContent =
+//         "0";
 
-    document.getElementById("progressFill").style.width =
-        "0%";
+//     document.getElementById("progressFill").style.width =
+//         "0%";
 
-    document.getElementById("gpsStatus").textContent =
-        "GPS waiting...";
-}
+//     document.getElementById("gpsStatus").textContent =
+//         "GPS waiting...";
+// }
 
 
 // reset run state
@@ -683,4 +686,27 @@ async function saveRun(duration) {
             "Run finished, but server could not be reached."
         );
     }
+}
+
+
+
+
+// stop tracking
+function stopTracking() {
+
+    if (watchId !== null) {
+
+        navigator.geolocation.clearWatch(watchId);
+
+        watchId = null;
+    }
+
+    if (timerInterval !== null) {
+
+        clearInterval(timerInterval);
+
+        timerInterval = null;
+    }
+
+    console.log("GPS and timer stopped");
 }
