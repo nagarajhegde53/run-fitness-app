@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Run
-
+from datetime import timedelta
 from django.contrib.auth.models import User
 
 
@@ -44,7 +44,7 @@ class RunSerializer(serializers.ModelSerializer):
             "started_at",
             "finished_at",
             "created_at",]
-        read_only_fields=["id","creted_at",]
+        read_only_fields=["id","created_at",]
 
     def validate_target_distance(self, value ):
          if value <= 0:
@@ -64,5 +64,22 @@ class RunSerializer(serializers.ModelSerializer):
                 "GPS accuracy cannot be negative."
             )
         return value
+
+
+    def to_internal_value(self, data):
+
+        data = data.copy()
+
+        if "duration" in data:
+            try:
+                data["duration"] = timedelta(
+                    seconds=float(data["duration"])
+                )
+            except (ValueError, TypeError):
+                raise serializers.ValidationError({
+                    "duration": "Duration must be a number of seconds."
+                })
+
+        return super().to_internal_value(data)
 
      

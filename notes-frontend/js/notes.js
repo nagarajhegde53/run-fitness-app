@@ -69,6 +69,7 @@ let startTime = null;
 let totalDistance = 0;
 let currentPosition = null;
 let watchId = null;
+let bestGpsAccuracy = null;
 
 // ==============================
 // Current target distance
@@ -159,6 +160,7 @@ function startRun() {
     totalDistance = 0;
 
     currentPosition = null;
+    bestGpsAccuracy = null;
 
     startTime = Date.now();
 
@@ -271,6 +273,12 @@ function handlePosition(position) {
 
     const accuracy =
         position.coords.accuracy;
+        if (
+    bestGpsAccuracy === null ||
+    accuracy < bestGpsAccuracy
+) {
+    bestGpsAccuracy = accuracy;
+}
 
 
     console.log(
@@ -450,40 +458,56 @@ function updateDistanceUI() {
         `${progress}%`;
 }
 
+// resetRunUI()  reset run UI
+function resetRunUI() {
+
+    // Reset values
+    totalDistance = 0;
+    currentPosition = null;
+    startTime = null;
+
+    // Reset timer
+    document.getElementById("timer").textContent =
+        "00:00.00";
+
+    // Reset distance
+    document.getElementById("liveDistance").textContent =
+        "0";
+
+    // Reset progress
+    document.getElementById("progressPercent").textContent =
+        "0";
+
+    document.getElementById("progressFill").style.width =
+        "0%";
+
+    // Hide live card
+    liveRunCard.hidden = true;
+
+    // Enable start button
+    startRunBtn.disabled = false;
+
+    // Reset GPS status
+    document.getElementById("gpsStatus").textContent =
+        "GPS ready";
+
+    console.log("Run UI reset");
+}
+
 
 // finish run
-function finishRun() {
+async function finishRun() {
 
     console.log("🏁 Target reached!");
 
-
-    // Stop GPS
-    if (watchId !== null) {
-
-        navigator.geolocation.clearWatch(
-            watchId
-        );
-
-        watchId = null;
-    }
-
-
-    // Stop timer
-    if (timerInterval !== null) {
-
-        clearInterval(timerInterval);
-
-        timerInterval = null;
-    }
-
+    stopTracking();
 
     const duration =
         Date.now() - startTime;
 
-
     console.log(
         "Distance:",
-        totalDistance,
+        totalDistance.toFixed(1),
         "meters"
     );
 
@@ -494,6 +518,10 @@ function finishRun() {
     );
 
 
+    // Save run to backend
+    await saveRun(duration);
+
+
     alert(
         `🏁 Run complete!\n\n` +
         `Distance: ${totalDistance.toFixed(1)}m\n` +
@@ -501,39 +529,15 @@ function finishRun() {
     );
 
 
-    resetRunState();
-
     resetRunUI();
-
-
-    startRunBtn.disabled = false;
 }
 
 // stoprun
-function stopRun() {
+async function stopRun() {
 
     console.log("Run stopped manually");
 
-
-    // Stop GPS
-    if (watchId !== null) {
-
-        navigator.geolocation.clearWatch(
-            watchId
-        );
-
-        watchId = null;
-    }
-
-
-    // Stop timer
-    if (timerInterval !== null) {
-
-        clearInterval(timerInterval);
-
-        timerInterval = null;
-    }
-
+    stopTracking();
 
     const duration =
         Date.now() - startTime;
@@ -552,6 +556,10 @@ function stopRun() {
     );
 
 
+    // Save the partial run
+    await saveRun(duration);
+
+
     alert(
         `Run stopped!\n\n` +
         `Distance: ${totalDistance.toFixed(1)}m\n` +
@@ -559,14 +567,7 @@ function stopRun() {
     );
 
 
-    // Reset everything
-    resetRunState();
-
     resetRunUI();
-
-
-    // Allow another run
-    startRunBtn.disabled = false;
 }
 
 
@@ -607,4 +608,79 @@ function resetRunState() {
 
 
 
-// 
+// save run 
+async function saveRun(duration) {
+
+    const runData = {
+
+        target_distance: targetDistance,
+
+        actual_distance: Number(
+            totalDistance.toFixed(1)
+        ),
+
+        duration: duration / 1000,
+
+    gps_accuracy: bestGpsAccuracy,
+
+        started_at: new Date(startTime).toISOString(),
+
+        finished_at: new Date().toISOString()
+    };
+
+
+    console.log("Sending run:", runData);
+
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/runs/`,
+            {
+                method: "POST",
+
+                credentials: "include",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrftoken
+                },
+
+                body: JSON.stringify(runData)
+            }
+        );
+
+
+        const data = await response.json();
+
+
+        if (!response.ok) {
+
+            console.error(
+                "Failed to save run:",
+                data
+            );
+
+            alert("Run finished, but failed to save.");
+
+            return;
+        }
+
+
+        console.log(
+            "Run saved successfully:",
+            data
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Save run error:",
+            error
+        );
+
+        alert(
+            "Run finished, but server could not be reached."
+        );
+    }
+}

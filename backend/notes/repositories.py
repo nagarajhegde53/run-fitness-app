@@ -1,6 +1,6 @@
 from .models import Run
 class Runrepo:
-    def create(**data):
+    def create(self,**data):
         return Run.objects.create(**data)
     def get_user_runs(self,user):
         return Run.objects.filter(user=user)
