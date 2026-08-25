@@ -1,37 +1,4 @@
 // ======================================================
-// CSRF
-// ======================================================
-
-function getCookie(name) {
-
-    let cookieValue = null;
-
-    if (document.cookie && document.cookie !== "") {
-
-        const cookies = document.cookie.split(";");
-
-        for (let cookie of cookies) {
-
-            cookie = cookie.trim();
-
-            if (cookie.startsWith(name + "=")) {
-
-                cookieValue = decodeURIComponent(
-                    cookie.substring(name.length + 1)
-                );
-
-                break;
-            }
-        }
-    }
-
-    return cookieValue;
-}
-
-const csrftoken = getCookie("csrftoken");
-
-
-// ======================================================
 // BACKEND
 // ======================================================
 
@@ -80,107 +47,144 @@ const gpsStatusElement =
 // RUN STATE
 // ======================================================
 
-let timerInterval = null;
-
-let startTime = null;
+let targetDistance = 100;
 
 let totalDistance = 0;
 
-let currentPosition = null;
+let startTime = null;
+
+let timerInterval = null;
+
+let isRunning = false;
 
 let watchId = null;
 
-let isRunning = false;
+
+// ======================================================
+// GPS STATE
+// ======================================================
+
+let currentPosition = null;
 
 let bestGpsAccuracy = null;
 
 
 // ======================================================
-// TARGET DISTANCE
-// EVERYTHING IS STORED IN METERS
+// SENSOR STATE
 // ======================================================
 
-let targetDistance = 100;
+// Whether the phone is currently considered moving
+
+let isMoving = false;
+
+
+// Last accelerometer reading
+
+let lastAcceleration = null;
+
+
+// Smoothed movement value
+
+let movementScore = 0;
+
+
+// Number of consecutive movement readings
+
+let movementFrames = 0;
+
+
+// Number of consecutive stationary readings
+
+let stationaryFrames = 0;
 
 
 // ======================================================
-// GPS FILTER SETTINGS
+// SENSOR SETTINGS
 // ======================================================
 
-// Maximum GPS accuracy we accept.
-//
-// Example:
-// accuracy = 5m  -> good
-// accuracy = 20m -> acceptable
-// accuracy = 50m -> ignore
+// Small acceleration changes caused by sensor noise
+// should not count as movement.
+
+const MOVEMENT_THRESHOLD = 0.35;
+
+
+// We require several readings before declaring movement.
+
+const MOVEMENT_CONFIRMATION_FRAMES = 5;
+
+
+// We require several stationary readings before
+// declaring the phone stationary again.
+
+const STATIONARY_CONFIRMATION_FRAMES = 10;
+
+
+// ======================================================
+// GPS SETTINGS
+// ======================================================
+
+// We don't want obviously terrible GPS points.
 
 const MAX_GPS_ACCURACY = 30;
 
 
-// Maximum realistic movement speed.
-//
-// 20 m/s = 72 km/h.
-//
-// This is FAR above normal running speed,
-// but protects us from crazy GPS jumps.
+// This is NOT our running-speed calculator.
+// It only prevents ridiculous GPS teleportation.
 
-const MAX_REASONABLE_SPEED = 20;
+const MAX_GPS_SPEED = 20;
 
 
 // ======================================================
-// DISTANCE SELECTION
+// DISTANCE BUTTONS
 // ======================================================
 
 distanceButtons.forEach(button => {
 
     button.addEventListener("click", () => {
 
-        // Remove active state
         distanceButtons.forEach(btn => {
-
             btn.classList.remove("active");
-
         });
 
 
-        // Add active state
         button.classList.add("active");
 
 
-        // Get target distance from HTML
         targetDistance =
             Number(button.dataset.distance);
 
 
-        // Update UI
-
-        if (targetDistance >= 1000) {
-
-            selectedDistance.textContent =
-                targetDistance / 1000;
-
-            selectedUnit.textContent =
-                "km";
-
-        } else {
-
-            selectedDistance.textContent =
-                targetDistance;
-
-            selectedUnit.textContent =
-                "m";
-        }
-
-
-        console.log(
-            "Selected target:",
-            targetDistance,
-            "meters"
-        );
+        updateTargetUI();
 
     });
 
 });
+
+
+// ======================================================
+// TARGET UI
+// ======================================================
+
+function updateTargetUI() {
+
+    if (targetDistance >= 1000) {
+
+        selectedDistance.textContent =
+            targetDistance / 1000;
+
+        selectedUnit.textContent =
+            "km";
+
+    } else {
+
+        selectedDistance.textContent =
+            targetDistance;
+
+        selectedUnit.textContent =
+            "m";
+    }
+
+}
 
 
 // ======================================================
@@ -209,14 +213,10 @@ stopRunBtn.addEventListener(
 
 function startRun() {
 
-    console.log(
-        "Starting run:",
-        targetDistance,
-        "meters"
-    );
+    if (isRunning) {
+        return;
+    }
 
-
-    // Check browser GPS support
 
     if (!navigator.geolocation) {
 
@@ -228,32 +228,53 @@ function startRun() {
     }
 
 
-    // Prevent accidentally starting
-    // multiple runs
+    console.log(
+        "================================"
+    );
 
-    if (isRunning) {
+    console.log(
+        "🏃 RUN STARTED"
+    );
 
-        console.log(
-            "A run is already active."
-        );
+    console.log(
+        "Target:",
+        targetDistance,
+        "meters"
+    );
 
-        return;
-    }
+    console.log(
+        "================================"
+    );
 
 
     // ==================================================
     // RESET RUN STATE
     // ==================================================
 
+    isRunning = true;
+
     totalDistance = 0;
+
+    startTime = Date.now();
 
     currentPosition = null;
 
     bestGpsAccuracy = null;
 
-    startTime = Date.now();
 
-    isRunning = true;
+    // ==================================================
+    // RESET SENSOR STATE
+    // ==================================================
+
+    isMoving = false;
+
+    lastAcceleration = null;
+
+    movementScore = 0;
+
+    movementFrames = 0;
+
+    stationaryFrames = 0;
 
 
     // ==================================================
@@ -276,14 +297,12 @@ function startRun() {
         "Getting GPS...";
 
 
-    // Show live card
-
     liveRunCard.hidden = false;
 
 
-    // Disable start
-
     startRunBtn.disabled = true;
+
+    stopRunBtn.disabled = false;
 
 
     // ==================================================
@@ -294,114 +313,610 @@ function startRun() {
 
 
     // ==================================================
-    // START GPS WATCH
+    // START GPS
     // ==================================================
 
     watchId =
         navigator.geolocation.watchPosition(
 
-            handlePosition,
+            handleGPSPosition,
 
             handleGPSError,
 
             {
+
                 enableHighAccuracy: true,
 
                 maximumAge: 0,
 
                 timeout: 10000
+
             }
 
         );
 
 
+    // ==================================================
+    // START MOTION SENSOR
+    // ==================================================
+
+    startMotionSensor();
+
+
     console.log(
-        "GPS tracking started."
+        "GPS + motion sensor started"
     );
 
 }
 
 
 // ======================================================
-// TIMER
+// START MOTION SENSOR
 // ======================================================
 
-function startTimer() {
+function startMotionSensor() {
 
-    // Prevent duplicate timers
+    if (!("DeviceMotionEvent" in window)) {
 
-    if (timerInterval !== null) {
+        console.warn(
+            "DeviceMotionEvent is not supported."
+        );
+
+        gpsStatusElement.textContent =
+            "Motion sensor unavailable";
 
         return;
     }
 
 
-    timerInterval =
-        setInterval(() => {
-
-            if (!isRunning) {
-
-                return;
-            }
+    console.log(
+        "📱 Requesting motion sensor..."
+    );
 
 
-            const elapsed =
-                Date.now() - startTime;
+    // Some browsers, especially iOS,
+    // require permission.
 
+    if (
+        typeof DeviceMotionEvent.requestPermission ===
+        "function"
+    ) {
 
-            updateTimer(elapsed);
+        DeviceMotionEvent.requestPermission()
 
-        }, 50);
+            .then(permission => {
+
+                if (permission === "granted") {
+
+                    window.addEventListener(
+                        "devicemotion",
+                        handleMotion
+                    );
+
+                    console.log(
+                        "✅ Motion permission granted"
+                    );
+
+                } else {
+
+                    console.warn(
+                        "❌ Motion permission denied"
+                    );
+
+                    gpsStatusElement.textContent =
+                        "Motion permission denied";
+                }
+
+            })
+
+            .catch(error => {
+
+                console.error(
+                    "Motion permission error:",
+                    error
+                );
+
+            });
+
+    }
+
+    else {
+
+        // Android Chrome normally comes here.
+
+        window.addEventListener(
+            "devicemotion",
+            handleMotion
+        );
+
+        console.log(
+            "✅ Motion sensor listener started"
+        );
+
+    }
 
 }
 
 
 // ======================================================
-// UPDATE TIMER
+// MOTION SENSOR
 // ======================================================
 
-function updateTimer(elapsed) {
+function handleMotion(event) {
 
-    const totalSeconds =
-        elapsed / 1000;
+    if (!isRunning) {
+        return;
+    }
 
 
-    const minutes =
-        Math.floor(
-            totalSeconds / 60
+    // Prefer acceleration without gravity.
+
+    let acceleration =
+        event.acceleration;
+
+
+    // Some phones may not provide it.
+    // Fall back to accelerationIncludingGravity.
+
+    if (
+        !acceleration ||
+        acceleration.x === null ||
+        acceleration.y === null ||
+        acceleration.z === null
+    ) {
+
+        acceleration =
+            event.accelerationIncludingGravity;
+    }
+
+
+    if (!acceleration) {
+        return;
+    }
+
+
+    const x =
+        acceleration.x || 0;
+
+    const y =
+        acceleration.y || 0;
+
+    const z =
+        acceleration.z || 0;
+
+
+    // ==================================================
+    // ACCELERATION MAGNITUDE
+    // ==================================================
+
+    const magnitude =
+
+        Math.sqrt(
+
+            x * x +
+            y * y +
+            z * z
+
         );
 
 
-    const seconds =
-        Math.floor(
-            totalSeconds % 60
+    // ==================================================
+    // FIRST READING
+    // ==================================================
+
+    if (lastAcceleration === null) {
+
+        lastAcceleration = magnitude;
+
+        return;
+    }
+
+
+    // ==================================================
+    // CHANGE FROM PREVIOUS READING
+    // ==================================================
+
+    const change =
+        Math.abs(
+            magnitude -
+            lastAcceleration
         );
 
 
-    const milliseconds =
-        Math.floor(
-            (elapsed % 1000) / 10
-        );
+    lastAcceleration =
+        magnitude;
 
 
-    const formattedTime =
+    // ==================================================
+    // MOVEMENT DETECTION
+    // ==================================================
 
-        `${String(minutes).padStart(2, "0")}:` +
+    if (
+        change >
+        MOVEMENT_THRESHOLD
+    ) {
 
-        `${String(seconds).padStart(2, "0")}.` +
+        movementFrames++;
 
-        `${String(milliseconds).padStart(2, "0")}`;
+        stationaryFrames = 0;
+
+    }
+
+    else {
+
+        stationaryFrames++;
+
+        movementFrames = 0;
+
+    }
 
 
-    timerElement.textContent =
-        formattedTime;
+    // ==================================================
+    // CONFIRM MOVEMENT
+    // ==================================================
+
+    if (
+        movementFrames >=
+        MOVEMENT_CONFIRMATION_FRAMES
+    ) {
+
+        if (!isMoving) {
+
+            console.log(
+                "🚶 MOTION DETECTED"
+            );
+
+        }
+
+
+        isMoving = true;
+
+        movementFrames = 0;
+
+    }
+
+
+    // ==================================================
+    // CONFIRM STATIONARY
+    // ==================================================
+
+    if (
+        stationaryFrames >=
+        STATIONARY_CONFIRMATION_FRAMES
+    ) {
+
+        if (isMoving) {
+
+            console.log(
+                "🧍 PHONE IS STATIONARY"
+            );
+
+        }
+
+
+        isMoving = false;
+
+        stationaryFrames = 0;
+
+    }
+
+
+    // ==================================================
+    // SENSOR DEBUG
+    // ==================================================
+
+    console.log(
+
+        "Motion:",
+        change.toFixed(3),
+        "| moving:",
+        isMoving
+
+    );
 
 }
 
 
 // ======================================================
-// HAVERSINE DISTANCE
-// Returns meters
+// GPS POSITION
+// ======================================================
+
+function handleGPSPosition(position) {
+
+    if (!isRunning) {
+        return;
+    }
+
+
+    const latitude =
+        position.coords.latitude;
+
+    const longitude =
+        position.coords.longitude;
+
+    const accuracy =
+        position.coords.accuracy;
+
+    const timestamp =
+        position.timestamp;
+
+
+    console.log(
+        "📍 GPS:",
+        latitude,
+        longitude,
+        "accuracy:",
+        accuracy
+    );
+
+
+    // ==================================================
+    // GPS STATUS
+    // ==================================================
+
+    if (accuracy <= 5) {
+
+        gpsStatusElement.textContent =
+            `GPS ±${Math.round(accuracy)}m • Excellent`;
+
+    }
+
+    else if (accuracy <= 10) {
+
+        gpsStatusElement.textContent =
+            `GPS ±${Math.round(accuracy)}m • Good`;
+
+    }
+
+    else if (accuracy <= 30) {
+
+        gpsStatusElement.textContent =
+            `GPS ±${Math.round(accuracy)}m • Fair`;
+
+    }
+
+    else {
+
+        gpsStatusElement.textContent =
+            `GPS ±${Math.round(accuracy)}m • Poor`;
+
+    }
+
+
+    // ==================================================
+    // TRACK BEST ACCURACY
+    // ==================================================
+
+    if (
+        bestGpsAccuracy === null ||
+        accuracy < bestGpsAccuracy
+    ) {
+
+        bestGpsAccuracy =
+            accuracy;
+    }
+
+
+    // ==================================================
+    // IGNORE BAD GPS
+    // ==================================================
+
+    if (
+        accuracy >
+        MAX_GPS_ACCURACY
+    ) {
+
+        console.log(
+            "❌ GPS ignored: poor accuracy"
+        );
+
+        return;
+    }
+
+
+    // ==================================================
+    // FIRST GPS POINT
+    // ==================================================
+
+    if (currentPosition === null) {
+
+        currentPosition = {
+
+            latitude:
+                latitude,
+
+            longitude:
+                longitude,
+
+            timestamp:
+                timestamp
+
+        };
+
+
+        console.log(
+            "📍 First trusted GPS point saved"
+        );
+
+
+        return;
+    }
+
+
+    // ==================================================
+    // CALCULATE GPS DISTANCE
+    // ==================================================
+
+    const distance =
+        calculateDistance(
+
+            currentPosition.latitude,
+
+            currentPosition.longitude,
+
+            latitude,
+
+            longitude
+
+        );
+
+
+    // ==================================================
+    // TIME DIFFERENCE
+    // ==================================================
+
+    const timeDifference =
+
+        (
+            timestamp -
+            currentPosition.timestamp
+        ) / 1000;
+
+
+    if (
+        timeDifference <= 0
+    ) {
+
+        return;
+    }
+
+
+    // ==================================================
+    // GPS SPEED
+    // ==================================================
+
+    const speed =
+        distance /
+        timeDifference;
+
+
+    console.log(
+        "GPS movement:",
+        distance.toFixed(2),
+        "m",
+        "| speed:",
+        speed.toFixed(2),
+        "m/s"
+    );
+
+
+    // ==================================================
+    // GPS TELEPORT FILTER
+    // ==================================================
+
+    if (
+        speed >
+        MAX_GPS_SPEED
+    ) {
+
+        console.log(
+            "❌ GPS jump rejected"
+        );
+
+
+        // Don't move currentPosition.
+
+        return;
+    }
+
+
+    // ==================================================
+    // IMPORTANT SENSOR GATE
+    // ==================================================
+
+    if (!isMoving) {
+
+        console.log(
+            "🧍 Stationary → GPS movement ignored:",
+            distance.toFixed(2),
+            "m"
+        );
+
+
+        // We DO update the GPS reference.
+        //
+        // Why?
+        //
+        // Suppose you're sitting and GPS moves:
+        //
+        // A → B → C
+        //
+        // We don't want B→C later becoming a giant
+        // movement when you finally start walking.
+
+        currentPosition = {
+
+            latitude:
+                latitude,
+
+            longitude:
+                longitude,
+
+            timestamp:
+                timestamp
+
+        };
+
+
+        return;
+    }
+
+
+    // ==================================================
+    // USER IS MOVING
+    // ==================================================
+
+    console.log(
+        "🏃 Motion detected → GPS movement accepted:",
+        distance.toFixed(2),
+        "m"
+    );
+
+
+    totalDistance += distance;
+
+
+    // Update GPS reference
+
+    currentPosition = {
+
+        latitude:
+            latitude,
+
+        longitude:
+            longitude,
+
+        timestamp:
+            timestamp
+
+    };
+
+
+    // ==================================================
+    // UPDATE UI
+    // ==================================================
+
+    updateDistanceUI();
+
+
+    // ==================================================
+    // TARGET REACHED
+    // ==================================================
+
+    if (
+        totalDistance >=
+        targetDistance
+    ) {
+
+        finishRun();
+
+    }
+
+}
+
+
+// ======================================================
+// HAVERSINE
 // ======================================================
 
 function calculateDistance(
@@ -417,7 +932,6 @@ function calculateDistance(
     const lat1Rad =
         lat1 * Math.PI / 180;
 
-
     const lat2Rad =
         lat2 * Math.PI / 180;
 
@@ -425,7 +939,6 @@ function calculateDistance(
     const deltaLat =
         (lat2 - lat1) *
         Math.PI / 180;
-
 
     const deltaLon =
         (lon2 - lon1) *
@@ -462,285 +975,126 @@ function calculateDistance(
 
 
 // ======================================================
-// HANDLE GPS POSITION
+// UPDATE DISTANCE UI
 // ======================================================
 
-function handlePosition(position) {
+function updateDistanceUI() {
 
-    // Ignore GPS callbacks after run ended
-
-    if (!isRunning) {
-
-        return;
-    }
+    liveDistanceElement.textContent =
+        totalDistance.toFixed(1);
 
 
-    // ==================================================
-    // GET GPS DATA
-    // ==================================================
+    const progress =
 
-    const latitude =
-        position.coords.latitude;
+        Math.min(
 
-    const longitude =
-        position.coords.longitude;
+            (
+                totalDistance /
+                targetDistance
+            ) * 100,
 
-    const accuracy =
-        position.coords.accuracy;
-
-
-    // Browser timestamp
-
-    const timestamp =
-        position.timestamp;
-
-
-    console.log(
-        "GPS:",
-        latitude,
-        longitude,
-        "accuracy:",
-        accuracy,
-        "timestamp:",
-        timestamp
-    );
-
-
-    // ==================================================
-    // TRACK BEST GPS ACCURACY
-    // ==================================================
-
-    if (
-        bestGpsAccuracy === null ||
-        accuracy < bestGpsAccuracy
-    ) {
-
-        bestGpsAccuracy =
-            accuracy;
-    }
-
-
-    // ==================================================
-    // GPS STATUS UI
-    // ==================================================
-
-    if (accuracy <= 5) {
-
-        gpsStatusElement.textContent =
-            `GPS ±${Math.round(accuracy)}m • Excellent`;
-
-    }
-
-    else if (accuracy <= 10) {
-
-        gpsStatusElement.textContent =
-            `GPS ±${Math.round(accuracy)}m • Good`;
-
-    }
-
-    else if (accuracy <= 30) {
-
-        gpsStatusElement.textContent =
-            `GPS ±${Math.round(accuracy)}m • Fair`;
-
-    }
-
-    else {
-
-        gpsStatusElement.textContent =
-            `GPS ±${Math.round(accuracy)}m • Poor`;
-
-    }
-
-
-    // ==================================================
-    // FILTER BAD GPS
-    // ==================================================
-
-    if (accuracy > MAX_GPS_ACCURACY) {
-
-        console.log(
-            "❌ GPS point ignored because accuracy is:",
-            accuracy
-        );
-
-        return;
-    }
-
-
-    // ==================================================
-    // FIRST GOOD GPS POINT
-    // ==================================================
-
-    if (currentPosition === null) {
-
-        currentPosition = {
-
-            latitude: latitude,
-
-            longitude: longitude,
-
-            timestamp: timestamp
-        };
-
-
-        console.log(
-            "✅ First trusted GPS point saved."
-        );
-
-
-        return;
-    }
-
-
-    // ==================================================
-    // CALCULATE DISTANCE
-    // ==================================================
-
-    const distance =
-        calculateDistance(
-
-            currentPosition.latitude,
-
-            currentPosition.longitude,
-
-            latitude,
-
-            longitude
+            100
 
         );
 
 
-    // ==================================================
-    // CALCULATE TIME DIFFERENCE
-    // ==================================================
-
-    const timeDifference =
-        (timestamp -
-            currentPosition.timestamp) / 1000;
+    progressPercentElement.textContent =
+        Math.round(progress);
 
 
-    console.log(
-        "Distance:",
-        distance.toFixed(2),
-        "m"
-    );
+    progressFillElement.style.width =
+        `${progress}%`;
+
+}
 
 
-    console.log(
-        "Time difference:",
-        timeDifference.toFixed(2),
-        "sec"
-    );
+// ======================================================
+// TIMER
+// ======================================================
 
+function startTimer() {
 
-    // ==================================================
-    // INVALID TIMESTAMP
-    // ==================================================
+    if (timerInterval !== null) {
 
-    if (timeDifference <= 0) {
-
-        console.log(
-            "❌ Invalid timestamp."
+        clearInterval(
+            timerInterval
         );
-
-        return;
     }
 
 
-    // ==================================================
-    // CALCULATE SPEED
-    // ======================================================
+    timerInterval = setInterval(() => {
 
-    const speed =
-        distance / timeDifference;
+        if (
+            !isRunning ||
+            startTime === null
+        ) {
 
-
-    console.log(
-        "Calculated movement speed:",
-        speed.toFixed(2),
-        "m/s"
-    );
+            return;
+        }
 
 
-    // ==================================================
-    // FILTER CRAZY GPS JUMPS
-    // ==================================================
+        const elapsed =
+            Date.now() -
+            startTime;
 
-    if (
-        speed >
-        MAX_REASONABLE_SPEED
-    ) {
 
-        console.log(
-            "❌ GPS jump ignored.",
-            "Speed:",
-            speed.toFixed(2),
-            "m/s"
+        updateTimer(elapsed);
+
+    }, 50);
+
+}
+
+
+function updateTimer(elapsed) {
+
+    const totalSeconds =
+        elapsed / 1000;
+
+
+    const minutes =
+        Math.floor(
+            totalSeconds / 60
         );
 
 
-        // IMPORTANT:
-        // We DON'T update currentPosition.
+    const seconds =
+        Math.floor(
+            totalSeconds % 60
+        );
 
-        return;
+
+    const milliseconds =
+        Math.floor(
+            (elapsed % 1000) / 10
+        );
+
+
+    timerElement.textContent =
+
+        `${String(minutes).padStart(2, "0")}:` +
+
+        `${String(seconds).padStart(2, "0")}.` +
+
+        `${String(milliseconds).padStart(2, "0")}`;
+
+}
+
+
+function stopTimer() {
+
+    if (timerInterval !== null) {
+
+        clearInterval(
+            timerInterval
+        );
+
+        timerInterval = null;
     }
 
 
-    // ==================================================
-    // ACCEPT MOVEMENT
-    // ==================================================
-
-    totalDistance += distance;
-
-
-    // ==================================================
-    // UPDATE TRUSTED POSITION
-    // ==================================================
-
-    currentPosition = {
-
-        latitude: latitude,
-
-        longitude: longitude,
-
-        timestamp: timestamp
-    };
-
-
     console.log(
-        "✅ Movement accepted:",
-        distance.toFixed(2),
-        "m"
+        "⏱ Timer stopped"
     );
-
-
-    console.log(
-        "🏃 TOTAL:",
-        totalDistance.toFixed(2),
-        "m"
-    );
-
-
-    // ==================================================
-    // UPDATE UI
-    // ==================================================
-
-    updateDistanceUI();
-
-
-    // ==================================================
-    // TARGET REACHED
-    // ==================================================
-
-    if (
-        totalDistance >=
-        targetDistance
-    ) {
-
-        finishRun();
-
-    }
 
 }
 
@@ -788,41 +1142,7 @@ function handleGPSError(error) {
 
 
 // ======================================================
-// UPDATE DISTANCE UI
-// ======================================================
-
-function updateDistanceUI() {
-
-    liveDistanceElement.textContent =
-        totalDistance.toFixed(1);
-
-
-    const progress =
-
-        Math.min(
-
-            (
-                totalDistance /
-                targetDistance
-            ) * 100,
-
-            100
-
-        );
-
-
-    progressPercentElement.textContent =
-        Math.round(progress);
-
-
-    progressFillElement.style.width =
-        `${progress}%`;
-
-}
-
-
-// ======================================================
-// STOP GPS + TIMER
+// STOP EVERYTHING
 // ======================================================
 
 function stopTracking() {
@@ -841,97 +1161,20 @@ function stopTracking() {
 
     // Stop timer
 
-    if (timerInterval !== null) {
-
-        clearInterval(
-            timerInterval
-        );
-
-        timerInterval = null;
-    }
+    stopTimer();
 
 
-    console.log(
-        "🛑 GPS and timer stopped."
-    );
+    // Stop motion listener
 
-}
-
-
-// ======================================================
-// FINISH RUN
-// ======================================================
-
-async function finishRun() {
-
-    // Prevent duplicate finish
-
-    if (!isRunning) {
-
-        return;
-    }
-
-
-    console.log(
-        "🏁 Target reached!"
-    );
-
-
-    // Mark stopped BEFORE doing anything else
-
-    isRunning = false;
-
-
-    // Stop GPS + timer
-
-    stopTracking();
-
-
-    // Calculate final duration
-
-    const duration =
-        Date.now() - startTime;
-
-
-    console.log(
-        "Final distance:",
-        totalDistance.toFixed(1),
-        "meters"
+    window.removeEventListener(
+        "devicemotion",
+        handleMotion
     );
 
 
     console.log(
-        "Final duration:",
-        duration,
-        "ms"
+        "🛑 GPS + timer + motion stopped"
     );
-
-
-    // Save to backend
-
-    await saveRun(duration);
-
-
-    // Show result
-
-    alert(
-
-        `🏁 Run complete!\n\n` +
-
-        `Distance: ` +
-
-        `${totalDistance.toFixed(1)}m\n` +
-
-        `Time: ` +
-
-        `${(duration / 1000).toFixed(2)} sec`
-
-    );
-
-
-    // Reset UI
-
-    resetRunUI();
 
 }
 
@@ -940,204 +1183,119 @@ async function finishRun() {
 // MANUAL STOP
 // ======================================================
 
-async function stopRun() {
-
-    // Don't stop if no run
+function stopRun() {
 
     if (!isRunning) {
-
         return;
     }
 
 
+    const duration =
+        Date.now() -
+        startTime;
+
+
     console.log(
-        "🛑 Run stopped manually."
+        "🛑 Manual stop"
     );
 
-
-    // Stop state
 
     isRunning = false;
 
 
-    // Stop GPS + timer
-
     stopTracking();
 
-
-    // Final duration
-
-    const duration =
-        Date.now() - startTime;
-
-
-    console.log(
-        "Final distance:",
-        totalDistance.toFixed(1),
-        "meters"
-    );
-
-
-    console.log(
-        "Final duration:",
-        duration,
-        "ms"
-    );
-
-
-    // Save run
-
-    await saveRun(duration);
-
-
-    // Show result
 
     alert(
 
         `Run stopped!\n\n` +
 
         `Distance: ` +
-
-        `${totalDistance.toFixed(1)}m\n` +
+        `${totalDistance.toFixed(1)} m\n` +
 
         `Time: ` +
-
         `${(duration / 1000).toFixed(2)} sec`
 
     );
 
 
-    // Reset UI
-
-    resetRunUI();
+    resetRun();
 
 }
 
 
 // ======================================================
-// SAVE RUN TO DJANGO
+// FINISH
 // ======================================================
 
-async function saveRun(durationMilliseconds) {
+function finishRun() {
 
-    // Backend wants seconds
+    if (!isRunning) {
+        return;
+    }
 
-    const durationSeconds =
-        durationMilliseconds / 1000;
 
-
-    const data = {
-
-        target_distance:
-            targetDistance,
-
-        actual_distance:
-            Number(
-                totalDistance.toFixed(2)
-            ),
-
-        duration:
-            durationSeconds,
-
-        gps_accuracy:
-            bestGpsAccuracy,
-
-        started_at:
-            new Date(
-                startTime
-            ).toISOString(),
-
-        finished_at:
-            new Date().toISOString()
-    };
+    const duration =
+        Date.now() -
+        startTime;
 
 
     console.log(
-        "Sending run to backend:",
-        data
+        "🏁 Target reached"
     );
 
 
-    try {
-
-        const response =
-            await fetch(
-
-                `${API_URL}/runs/`,
-
-                {
-
-                    method: "POST",
-
-                    credentials: "include",
-
-                    headers: {
-
-                        "Content-Type":
-                            "application/json",
-
-                        "X-CSRFToken":
-                            csrftoken
-                    },
-
-                    body:
-                        JSON.stringify(data)
-                }
-
-            );
+    isRunning = false;
 
 
-        if (!response.ok) {
-
-            const errorData =
-                await response.json();
-
-            console.error(
-                "Backend error:",
-                errorData
-            );
-
-            return;
-        }
+    stopTracking();
 
 
-        const result =
-            await response.json();
+    alert(
+
+        `🏁 Run complete!\n\n` +
+
+        `Distance: ` +
+        `${totalDistance.toFixed(1)} m\n` +
+
+        `Time: ` +
+        `${(duration / 1000).toFixed(2)} sec`
+
+    );
 
 
-        console.log(
-            "✅ Run saved successfully:",
-            result
-        );
-
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "❌ Failed to save run:",
-            error
-        );
-
-    }
+    resetRun();
 
 }
 
 
 // ======================================================
-// RESET UI AFTER RUN
+// RESET
 // ======================================================
 
-function resetRunUI() {
+function resetRun() {
+
+    isRunning = false;
+
 
     totalDistance = 0;
 
-    currentPosition = null;
-
     startTime = null;
 
+    currentPosition = null;
+
     bestGpsAccuracy = null;
+
+
+    isMoving = false;
+
+    lastAcceleration = null;
+
+    movementScore = 0;
+
+    movementFrames = 0;
+
+    stationaryFrames = 0;
 
 
     timerElement.textContent =
@@ -1157,21 +1315,28 @@ function resetRunUI() {
 
 
     gpsStatusElement.textContent =
-        "GPS ready";
+        "Ready";
 
 
-    // Hide live card
+    startRunBtn.disabled = false;
+
+    stopRunBtn.disabled = false;
+
 
     liveRunCard.hidden = true;
 
 
-    // Enable start button
-
-    startRunBtn.disabled = false;
-
-
     console.log(
-        "✅ Run completely reset."
+        "♻️ Run completely reset"
     );
 
 }
+
+
+// ======================================================
+// INITIALIZE
+// ======================================================
+
+updateTargetUI();
+
+resetRun();
