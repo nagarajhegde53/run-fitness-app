@@ -105,12 +105,12 @@ let stationaryFrames = 0;
 // Small acceleration changes caused by sensor noise
 // should not count as movement.
 
-const MOVEMENT_THRESHOLD = 0.35;
+const MOVEMENT_THRESHOLD = 0.12;
 
 
 // We require several readings before declaring movement.
 
-const MOVEMENT_CONFIRMATION_FRAMES = 5;
+const MOVEMENT_CONFIRMATION_FRAMES = 3;
 
 
 // We require several stationary readings before
