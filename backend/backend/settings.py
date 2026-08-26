@@ -149,11 +149,14 @@ STATIC_URL = 'static/'
 #     BASE_DIR / "static"
 # ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
 CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5500",
      "http://localhost:3000",  # Common for React
     "http://127.0.0.1:5173",
     #   "https://onrender.com",
+     "https://run-fitness-app.onrender.com",
       "https://run-fitness-app-1.onrender.com",
 ]
 
@@ -163,7 +166,10 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5500",
     # added
      "https://run-fitness-app-1.onrender.com",
-]
+     "http://127.0.0.1:5173",
+    "https://run-fitness-app.onrender.com",
+      "http://localhost:3000",
+   ]
 
 
 SESSION_COOKIE_SECURE = True

@@ -1728,7 +1728,31 @@ document
 
 
     // csrf token 
-    async function getCSRFToken() {
+//     async function getCSRFToken() {
+
+//     const response = await fetch(
+//         `${API_URL}/api/csrf/`,
+//         {
+//             method: "GET",
+//             credentials: "include"
+//         }
+//     );
+
+//     console.log(
+//         "CSRF endpoint:",
+//         response.status
+//     );
+
+//     const token = getCookie("csrftoken");
+
+//     console.log(
+//         "CSRF cookie:",
+//         token
+//     );
+
+//     return token;
+// }
+async function getCSRFToken() {
 
     const response = await fetch(
         `${API_URL}/api/csrf/`,
@@ -1738,17 +1762,15 @@ document
         }
     );
 
-    console.log(
-        "CSRF endpoint:",
-        response.status
-    );
-
-    const token = getCookie("csrftoken");
+    console.log("CSRF endpoint:", response.status);
 
     console.log(
-        "CSRF cookie:",
-        token
+        "ALL COOKIES:",
+        document.cookie
     );
 
-    return token;
+    console.log(
+        "CSRF COOKIE:",
+        getCookie("csrftoken")
+    );
 }
