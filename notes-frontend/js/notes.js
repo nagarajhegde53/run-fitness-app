@@ -1452,3 +1452,234 @@ async function saveRunToBackend(duration) {
         );
     }
 }
+
+
+// load runs 
+// ============================================
+// FETCH ALL RUNS
+// ============================================
+
+async function loadRuns() {
+
+    const runHistory = document.getElementById("runHistory");
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/api/runs/`,
+            {
+                method: "GET",
+                credentials: "include"
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch runs");
+        }
+
+        const runs = await response.json();
+
+        // No runs
+        if (runs.length === 0) {
+
+            runHistory.innerHTML = `
+                <div class="empty-state">
+                    <div>🏃</div>
+                    <p>No runs yet</p>
+                    <span>
+                        Complete your first run and it'll appear here.
+                    </span>
+                </div>
+            `;
+
+            return;
+        }
+
+        // Clear old content
+        runHistory.innerHTML = "";
+
+        // Add every run
+        runs.forEach(run => {
+
+            const duration = formatDuration(run.duration);
+
+            const distance =
+                Number(run.actual_distance).toFixed(1);
+
+            const target =
+                Number(run.target_distance);
+
+            const runElement = document.createElement("div");
+
+            runElement.className = "run-history-item";
+
+            runElement.innerHTML = `
+                <div>
+                    <strong>${distance} m</strong>
+                    <span>Target: ${target} m</span>
+                </div>
+
+                <div>
+                    <strong>${duration}</strong>
+                    <span>Time</span>
+                </div>
+            `;
+
+            runHistory.appendChild(runElement);
+
+        });
+
+    }
+    catch (error) {
+
+        console.error("Load runs error:", error);
+
+        runHistory.innerHTML = `
+            <div class="empty-state">
+                <div>⚠️</div>
+                <p>Could not load runs</p>
+                <span>Please try again.</span>
+            </div>
+        `;
+    }
+}
+
+
+// ============================================
+// FORMAT DJANGO DURATION
+// ============================================
+
+function formatDuration(duration) {
+
+    /*
+        Django DurationField normally returns:
+
+        "0:01:23.450000"
+
+        = 1 minute 23.45 seconds
+    */
+
+    if (!duration) {
+        return "--";
+    }
+
+    const parts = duration.split(":");
+
+    const hours = Number(parts[0]);
+    const minutes = Number(parts[1]);
+
+    const seconds =
+        parseFloat(parts[2]);
+
+    if (hours > 0) {
+
+        return `${hours}h ${minutes}m`;
+
+    }
+
+    if (minutes > 0) {
+
+        return `${minutes}m ${seconds.toFixed(1)}s`;
+
+    }
+
+    return `${seconds.toFixed(2)}s`;
+}
+
+
+// ============================================
+// FETCH BEST RUN
+// ============================================
+
+async function loadBestRun(distance, elementId) {
+
+    const element =
+        document.getElementById(elementId);
+
+    try {
+
+        const response = await fetch(
+           `${API_URL}/api/runs/best/?distance=${distance}`,
+            {
+                method: "GET",
+                credentials: "include"
+            }
+        );
+
+        // No run for this distance
+        if (response.status === 404) {
+
+            element.textContent = "--";
+
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch best run");
+        }
+
+        const run = await response.json();
+
+        element.textContent =
+            formatDuration(run.duration);
+
+    }
+    catch (error) {
+
+        console.error(
+            `Best ${distance}m error:`,
+            error
+        );
+
+        element.textContent = "--";
+    }
+}
+
+
+// ============================================
+// LOAD ALL BEST RUNS
+// ============================================
+
+async function loadBestRuns() {
+
+    await Promise.all([
+
+        loadBestRun(100, "best100"),
+
+        loadBestRun(200, "best200"),
+
+        loadBestRun(500, "best500"),
+
+        loadBestRun(1000, "best1000")
+
+    ]);
+
+}
+
+
+// ============================================
+// LOAD RUNNING DATA WHEN PAGE OPENS
+// ============================================
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    loadRuns();
+
+    loadBestRuns();
+
+});
+
+
+// ============================================
+// REFRESH RUN HISTORY
+// ============================================
+
+document
+    .getElementById("refreshRunsBtn")
+    .addEventListener("click", () => {
+
+        loadRuns();
+
+        loadBestRuns();
+
+    });
