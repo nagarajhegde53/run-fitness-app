@@ -32,8 +32,9 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
-    'run-fitness-app.onrender.com'
-]
+    'run-fitness-app.onrender.com',
+      "run-fitness-app-1.onrender.com",
+    ]
 
 
 # Application definition
@@ -152,7 +153,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5500",
      "http://localhost:3000",  # Common for React
     "http://127.0.0.1:5173",
-      "https://onrender.com",
+    #   "https://onrender.com",
       "https://run-fitness-app-1.onrender.com",
 ]
 
@@ -163,3 +164,10 @@ CSRF_TRUSTED_ORIGINS = [
     # added
      "https://run-fitness-app-1.onrender.com",
 ]
+
+
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = "None"
+
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = "None"

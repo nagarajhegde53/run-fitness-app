@@ -1433,7 +1433,7 @@ async function saveRunToBackend(duration) {
     try {
 
         const response = await fetch(
-            `${API_URL}/runs/`,
+            `${API_URL}/api/runs/`,
             {
                 method: "POST",
 
@@ -1441,7 +1441,8 @@ async function saveRunToBackend(duration) {
 
                 headers: {
                     "Content-Type": "application/json",
-                    "X-CSRFToken": csrftoken
+                    // "X-CSRFToken": csrftoken
+                    "X-CSRFToken": getCookie("csrftoken")
                 },
 
                 body: JSON.stringify(data)
