@@ -24,7 +24,7 @@ load_dotenv(BASE_DIR.parent/".env")
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+SECRET_KEY =  os.environ.get("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -171,3 +171,4 @@ SESSION_COOKIE_SAMESITE = "None"
 
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_HTTPONLY = False
