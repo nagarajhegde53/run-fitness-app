@@ -1416,24 +1416,26 @@ updateTargetUI();
 resetRun();
 
 
-// save to backend 
+// save to backend
 async function saveRunToBackend(duration) {
-  const csrftoken = getCookie("csrftoken");
-   console.log("CSRF token before POST:", csrftoken);
+
+    const csrftoken = getCookie("csrftoken");
+
+    console.log("========== SAVE RUN ==========");
+    console.log("CSRF token:", csrftoken);
+
     const data = {
         target_distance: targetDistance,
         actual_distance: Number(totalDistance.toFixed(2)),
         duration: Number((duration / 1000).toFixed(2)),
-        // gps_accuracy: lastGPSAccuracy,
         started_at: new Date(startTime).toISOString(),
         finished_at: new Date().toISOString()
     };
 
-    console.log("Sending run to backend:", data);
-   
+    console.log("Sending:", data);
 
     try {
- 
+
         const response = await fetch(
             `${API_URL}/api/runs/`,
             {
@@ -1444,46 +1446,121 @@ async function saveRunToBackend(duration) {
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRFToken": csrftoken
-                    // "X-CSRFToken": getCookie("csrftoken")
                 },
 
                 body: JSON.stringify(data)
             }
         );
 
-        const result = await response.json();
+        console.log("POST /api/runs/ status:", response.status);
 
-        console.log(
-            "Backend response:",
-            result
-        );
+        const text = await response.text();
+
+        console.log("Backend raw response:", text);
 
         if (!response.ok) {
 
             console.error(
-                "Failed to save run:",
-                result
+                "❌ Run save failed",
+                response.status,
+                text
             );
 
-            alert("Run finished, but couldn't save it.");
+            alert(
+                `Run finished, but couldn't save it.\n\n` +
+                `Server status: ${response.status}\n` +
+                `${text}`
+            );
 
-            return;
+            return false;
         }
 
-        console.log("✅ Run saved successfully!");
+        console.log("✅ Run saved successfully");
 
-    } catch (error) {
+        return true;
+
+    }
+    catch (error) {
 
         console.error(
-            "Backend connection error:",
+            "❌ Backend connection error:",
             error
         );
 
         alert(
             "Run finished, but server couldn't be reached."
         );
+
+        return false;
     }
-}
+} 
+// async function saveRunToBackend(duration) {
+//   const csrftoken = getCookie("csrftoken");
+//    console.log("CSRF token before POST:", csrftoken);
+//     const data = {
+//         target_distance: targetDistance,
+//         actual_distance: Number(totalDistance.toFixed(2)),
+//         duration: Number((duration / 1000).toFixed(2)),
+//         // gps_accuracy: lastGPSAccuracy,
+//         started_at: new Date(startTime).toISOString(),
+//         finished_at: new Date().toISOString()
+//     };
+
+//     console.log("Sending run to backend:", data);
+   
+
+//     try {
+ 
+//         const response = await fetch(
+//             `${API_URL}/api/runs/`,
+//             {
+//                 method: "POST",
+
+//                 credentials: "include",
+
+//                 headers: {
+//                     "Content-Type": "application/json",
+//                     "X-CSRFToken": csrftoken
+//                     // "X-CSRFToken": getCookie("csrftoken")
+//                 },
+
+//                 body: JSON.stringify(data)
+//             }
+//         );
+
+//         const result = await response.json();
+
+//         console.log(
+//             "Backend response:",
+//             result
+//         );
+
+//         if (!response.ok) {
+
+//             console.error(
+//                 "Failed to save run:",
+//                 result
+//             );
+
+//             alert("Run finished, but couldn't save it.");
+
+//             return;
+//         }
+
+//         console.log("✅ Run saved successfully!");
+
+//     } catch (error) {
+
+//         console.error(
+//             "Backend connection error:",
+//             error
+//         );
+
+//         alert(
+//             "Run finished, but server couldn't be reached."
+//         );
+//     }
+// }
 
 
 // load runs 
