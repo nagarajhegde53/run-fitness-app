@@ -139,7 +139,7 @@ const MAX_GPS_SPEED = 20;
 
 const csrftoken = getCookie("csrftoken");
 
-// csrf
+csrf
 function getCookie(name) {
 
     let cookieValue = null;

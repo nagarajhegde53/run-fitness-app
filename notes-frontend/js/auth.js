@@ -15,35 +15,57 @@ const registerUsername = document.getElementById("registerUsername");
 const registerEmail = document.getElementById("registerEmail");
 const registerPassword = document.getElementById("registerPassword");
 const confirmPassword = document.getElementById("confirmPassword");
-const csrftoken = getCookie("csrftoken");
-console.log("csrftoken");
+// const csrftoken = getCookie("csrftoken");
+// console.log("csrftoken");
 
+// new 
+let csrftoken = null;
 
+async function getCSRFToken() {
 
-function getCookie(name) {
-
-    let cookieValue = null;
-
-    if (document.cookie && document.cookie !== "") {
-
-        const cookies = document.cookie.split(";");
-
-        for (let cookie of cookies) {
-
-            cookie = cookie.trim();
-
-            if (cookie.startsWith(name + "=")) {
-
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-
-                break;
-
-            }
+    const response = await fetch(
+        "https://run-fitness-app.onrender.com/api/csrf/",
+        {
+            method: "GET",
+            credentials: "include"
         }
-    }
+    );
 
-    return cookieValue;
+    const data = await response.json();
+
+    csrftoken = data.csrfToken;
+
+    console.log("CSRF token received:", !!csrftoken);
+
+    return csrftoken;
 }
+
+
+
+// function getCookie(name) {
+
+//     let cookieValue = null;
+
+//     if (document.cookie && document.cookie !== "") {
+
+//         const cookies = document.cookie.split(";");
+
+//         for (let cookie of cookies) {
+
+//             cookie = cookie.trim();
+
+//             if (cookie.startsWith(name + "=")) {
+
+//                 cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+
+//                 break;
+
+//             }
+//         }
+//     }
+
+//     return cookieValue;
+// }
 
 // =============================
 // Switch Forms
@@ -75,6 +97,62 @@ registerTab.addEventListener("click", () => {
 // Login
 // =============================
 
+// loginForm.addEventListener("submit", async function (event) {
+
+//     event.preventDefault();
+
+//     const username = loginUsername.value.trim();
+//     const password = loginPassword.value;
+
+//     const data = {
+//         username,
+//         password
+//     };
+
+//     try {
+//  const response = await fetch("https://run-fitness-app.onrender.com/api/login/",
+//     //    const response = await fetch("http://127.0.0.1:8000/login/", 
+//     {
+
+//     method: "POST",
+
+//     credentials: "include",
+
+//     headers: {
+//         "Content-Type": "application/json",
+//         "X-CSRFToken": csrftoken
+//     },
+
+//     body: JSON.stringify(data)
+
+// });
+//         const result = await response.json();
+
+//         if (response.ok) {
+
+//             alert("Login Successful");
+
+//             // console.log(result);
+
+//             window.location.href = "notes.html";
+
+//         } else {
+
+//             alert(result.error || "Login Failed");
+
+//         }
+
+//     }
+
+//     catch (error) {
+
+//         console.error(error);
+
+//         alert("Server Error");
+
+//     }
+
+// });
 loginForm.addEventListener("submit", async function (event) {
 
     event.preventDefault();
@@ -88,50 +166,49 @@ loginForm.addEventListener("submit", async function (event) {
     };
 
     try {
- const response = await fetch("https://run-fitness-app.onrender.com/api/login/",
-    //    const response = await fetch("http://127.0.0.1:8000/login/", 
-    {
 
-    method: "POST",
+        // Get fresh CSRF token
+        const token = await getCSRFToken();
 
-    credentials: "include",
+        const response = await fetch(
+            "https://run-fitness-app.onrender.com/api/login/",
+            {
+                method: "POST",
 
-    headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": csrftoken
-    },
+                credentials: "include",
 
-    body: JSON.stringify(data)
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": token
+                },
 
-});
+                body: JSON.stringify(data)
+            }
+        );
+
         const result = await response.json();
 
         if (response.ok) {
 
             alert("Login Successful");
 
-            // console.log(result);
-
             window.location.href = "notes.html";
 
         } else {
 
-            alert(result.error || "Login Failed");
+            console.log("Login response:", result);
 
+            alert(result.error || "Login Failed");
         }
 
-    }
+    } catch (error) {
 
-    catch (error) {
-
-        console.error(error);
+        console.error("Login error:", error);
 
         alert("Server Error");
-
     }
 
 });
-
 
 // =============================
 // Register
@@ -155,30 +232,31 @@ registerForm.addEventListener("submit", async function (event) {
     }
 
     const data = {
-
         username,
         email,
         password
-
     };
 
     try {
-const response =await fetch("https://run-fitness-app.onrender.com/api/register/",
-        // const response = await fetch("http://127.0.0.1:8000/register/",
-         {
 
-            method: "POST",
+        // Get fresh CSRF token
+        const token = await getCSRFToken();
 
-            headers: {
+        const response = await fetch(
+            "https://run-fitness-app.onrender.com/api/register/",
+            {
+                method: "POST",
 
-                "Content-Type": "application/json",
-                 "X-CSRFToken": csrftoken
+                credentials: "include",
 
-            },
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": token
+                },
 
-            body: JSON.stringify(data)
-
-        });
+                body: JSON.stringify(data)
+            }
+        );
 
         const result = await response.json();
 
@@ -190,17 +268,13 @@ const response =await fetch("https://run-fitness-app.onrender.com/api/register/"
 
             loginTab.click();
 
-        }
-
-        else {
+        } else {
 
             alert(JSON.stringify(result));
 
         }
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(error);
 

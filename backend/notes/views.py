@@ -149,18 +149,15 @@ class BestRunView(APIView):
 #         return JsonResponse({"message": "CSRF Cookie Set"})
     
 from django.http import JsonResponse
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.utils.decorators import method_decorator
+from django.middleware.csrf import get_token
 from rest_framework.views import APIView
 
 
-@method_decorator(ensure_csrf_cookie, name="dispatch")
 class CSRF(APIView):
 
     def get(self, request):
+        token = get_token(request)
+
         return JsonResponse({
-            "message": "CSRF Cookie Set"
+            "csrfToken": token
         })
-        
-
-
