@@ -1418,7 +1418,8 @@ resetRun();
 
 // save to backend 
 async function saveRunToBackend(duration) {
-
+  const csrftoken = getCookie("csrftoken");
+   console.log("CSRF token before POST:", csrftoken);
     const data = {
         target_distance: targetDistance,
         actual_distance: Number(totalDistance.toFixed(2)),
@@ -1429,9 +1430,10 @@ async function saveRunToBackend(duration) {
     };
 
     console.log("Sending run to backend:", data);
+   
 
     try {
-
+ 
         const response = await fetch(
             `${API_URL}/api/runs/`,
             {
@@ -1441,8 +1443,8 @@ async function saveRunToBackend(duration) {
 
                 headers: {
                     "Content-Type": "application/json",
-                    // "X-CSRFToken": csrftoken
-                    "X-CSRFToken": getCookie("csrftoken")
+                    "X-CSRFToken": csrftoken
+                    // "X-CSRFToken": getCookie("csrftoken")
                 },
 
                 body: JSON.stringify(data)
@@ -1691,14 +1693,21 @@ async function loadBestRuns() {
 // LOAD RUNNING DATA WHEN PAGE OPENS
 // ============================================
 
-document.addEventListener("DOMContentLoaded", () => {
+// document.addEventListener("DOMContentLoaded", () => {
+
+//     loadRuns();
+
+//     loadBestRuns();
+
+// });
+document.addEventListener("DOMContentLoaded", async () => {
+
+    await getCSRFToken();
 
     loadRuns();
-
     loadBestRuns();
 
 });
-
 
 // ============================================
 // REFRESH RUN HISTORY
@@ -1713,3 +1722,33 @@ document
         loadBestRuns();
 
     });
+
+
+
+
+
+    // csrf token 
+    async function getCSRFToken() {
+
+    const response = await fetch(
+        `${API_URL}/api/csrf/`,
+        {
+            method: "GET",
+            credentials: "include"
+        }
+    );
+
+    console.log(
+        "CSRF endpoint:",
+        response.status
+    );
+
+    const token = getCookie("csrftoken");
+
+    console.log(
+        "CSRF cookie:",
+        token
+    );
+
+    return token;
+}
