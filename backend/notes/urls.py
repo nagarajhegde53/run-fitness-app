@@ -5,6 +5,14 @@ from .views import Login
 from .views import CSRF
 from .models import Run
 from .views import RunView, BestRunView
+from .views import (
+    Register,
+    Login,
+    Logout,
+    CSRF,
+    RunView,
+    BestRunView,
+)
 
 
 
