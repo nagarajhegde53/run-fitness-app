@@ -1419,10 +1419,12 @@ resetRun();
 // save to backend
 async function saveRunToBackend(duration) {
 
-    const csrftoken = getCookie("csrftoken");
+    const csrftoken = await getCSRFToken();
 
-    console.log("========== SAVE RUN ==========");
-    console.log("CSRF token:", csrftoken);
+    console.log(
+        "CSRF token before POST:",
+        csrftoken
+    );
 
     const data = {
         target_distance: targetDistance,
@@ -1432,7 +1434,7 @@ async function saveRunToBackend(duration) {
         finished_at: new Date().toISOString()
     };
 
-    console.log("Sending:", data);
+    console.log("Sending run:", data);
 
     try {
 
@@ -1452,38 +1454,39 @@ async function saveRunToBackend(duration) {
             }
         );
 
-        console.log("POST /api/runs/ status:", response.status);
-
         const text = await response.text();
 
-        console.log("Backend raw response:", text);
+        console.log(
+            "POST /api/runs/:",
+            response.status
+        );
+
+        console.log(
+            "Response:",
+            text
+        );
 
         if (!response.ok) {
-
-            console.error(
-                "❌ Run save failed",
-                response.status,
-                text
-            );
 
             alert(
                 `Run finished, but couldn't save it.\n\n` +
                 `Server status: ${response.status}\n` +
-                `${text}`
+                text
             );
 
             return false;
         }
 
-        console.log("✅ Run saved successfully");
+        console.log(
+            "✅ Run saved successfully"
+        );
 
         return true;
 
-    }
-    catch (error) {
+    } catch (error) {
 
         console.error(
-            "❌ Backend connection error:",
+            "Save run error:",
             error
         );
 
@@ -1493,7 +1496,7 @@ async function saveRunToBackend(duration) {
 
         return false;
     }
-} 
+}
 // async function saveRunToBackend(duration) {
 //   const csrftoken = getCookie("csrftoken");
 //    console.log("CSRF token before POST:", csrftoken);
@@ -1839,15 +1842,13 @@ async function getCSRFToken() {
         }
     );
 
-    console.log("CSRF endpoint:", response.status);
+    if (!response.ok) {
+        throw new Error("Failed to get CSRF token");
+    }
 
-    console.log(
-        "ALL COOKIES:",
-        document.cookie
-    );
+    const data = await response.json();
 
-    console.log(
-        "CSRF COOKIE:",
-        getCookie("csrftoken")
-    );
+    console.log("CSRF response:", data);
+
+    return data.csrfToken;
 }
