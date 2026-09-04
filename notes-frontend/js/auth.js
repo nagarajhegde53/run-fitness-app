@@ -192,7 +192,7 @@ loginForm.addEventListener("submit", async function (event) {
 
             alert("Login Successful");
 
-            window.location.href = "notes.html";
+            window.location.href = "menu.html";
 
         } else {
 
