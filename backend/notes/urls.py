@@ -13,6 +13,7 @@ from .views import (
     RunView,
     BestRunView,
 )
+from .views import MeView
 
 
 
@@ -23,6 +24,7 @@ urlpatterns = [
      
     path("logout/", Logout.as_view()),
     path("csrf/", CSRF.as_view()),
+    path("me/", MeView.as_view()),
     path("runs/", RunView.as_view(), name="runs"),
      path("runs/best/", BestRunView.as_view(), name="best-run"),
 

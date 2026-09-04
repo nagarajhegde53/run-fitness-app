@@ -55,6 +55,14 @@ class Login(APIView):
                 status=401
             )
         return Response(serializer.errors, status=400)
+    
+#get user name
+class MeView(APIView):
+    permission_classes=[IsAuthenticated]
+    def get(self,request):
+        return Response({
+            "username":request.user.username
+        })
 
 
 class Logout(APIView):
