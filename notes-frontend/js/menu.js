@@ -1,3 +1,21 @@
+let csrftoken = null;
+
+async function getCSRFToken() {
+
+    const response = await fetch(
+        `${API_URL}/api/csrf/`,
+        {
+            method: "GET",
+            credentials: "include"
+        }
+    );
+
+    const data = await response.json();
+
+    csrftoken = data.csrfToken;
+
+    return csrftoken;
+}
 const API_URL = "https://run-fitness-app.onrender.com";
 
 
@@ -52,14 +70,23 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
 
     try {
 
+        const token = await getCSRFToken();
+
         const response = await fetch(`${API_URL}/api/logout/`, {
             method: "POST",
-            credentials: "include"
+            credentials: "include",
+            headers: {
+                "X-CSRFToken": token
+            }
         });
 
         if (response.ok) {
 
             window.location.href = "auth.html";
+
+        } else {
+
+            console.error("Logout failed:", await response.text());
 
         }
 
@@ -70,6 +97,5 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
     }
 
 });
-
 
 loadUser();
