@@ -54,8 +54,8 @@ document.getElementById("runTrackBtn").addEventListener("click", () => {
 });
 document.getElementById("pushupBtn").addEventListener("click", () => {
 
-    alert("💪 Pushup AI is coming soon!");
-
+   
+ window.location.href = "pushups.html";
 });
 
 
