@@ -1,4 +1,4 @@
-from .models import Run
+from .models import Run,PushupActivity
 class Runrepo:
     def create(self,**data):
         return Run.objects.create(**data)
@@ -11,5 +11,15 @@ class Runrepo:
                                     )
 
                .order_by("duration").first())
-    
-    
+
+
+
+#push up repo
+class PushupRepo:
+    def create(self,**data):
+        return PushupActivity.objects.create(**data)
+
+    def get_recent_activities(self, user):
+        return PushupActivity.objects.filter(
+            user=user
+        ).order_by("-created_at")[:5]

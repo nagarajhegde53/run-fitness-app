@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MobileNet Test</title>
+
+```
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite/dist/tf-tflite.min.js"></script>
+```
+
+</head>
+
+<body>
+
+```
+<h1>MobileNetV3-Small Test</h1>
+
+<p id="modelStatus">Loading model...</p>
+
+<h2>Choose an image</h2>
+
+<input type="file" id="imageInput" accept="image/*">
+
+<br><br>
+
+<img
+    id="testImage"
+    width="224"
+    height="224"
+    style="object-fit: contain; border: 1px solid black;"
+>
+
+<h2>Prediction</h2>
+
+<pre id="prediction">No prediction yet.</pre>
+
+<script>
+
+    let model = null;
+
+    const modelStatus = document.getElementById("modelStatus");
+    const imageInput = document.getElementById("imageInput");
+    const testImage = document.getElementById("testImage");
+    const prediction = document.getElementById("prediction");
+
+
+    async function loadModel() {
+
+        try {
+
+            console.log("Loading MobileNetV3-Small...");
+
+            model = await tflite.loadTFLiteModel(
+                "models/mobilenet_v3_small.tflite"
+            );
+
+            console.log("MODEL:", model);
+
+            console.log("INPUTS:", model.inputs);
+
+            console.log("OUTPUTS:", model.outputs);
+
+
+            modelStatus.textContent = "Model loaded successfully ✅";
+
+            console.log("========== INPUT DETAILS ==========");
+
+            model.inputs.forEach((input, index) => {
+
+                console.log("INPUT", index);
+                console.log("Name:", input.name);
+                console.log("Shape:", input.shape);
+                console.log("Datatype:", input.dtype);
+
+            });
+
+
+            console.log("========== OUTPUT DETAILS ==========");
+
+            model.outputs.forEach((output, index) => {
+
+                console.log("OUTPUT", index);
+                console.log("Name:", output.name);
+                console.log("Shape:", output.shape);
+                console.log("Datatype:", output.dtype);
+
+            });
+
+        } catch (error) {
+
+            console.error("MODEL LOAD ERROR:", error);
+
+            modelStatus.textContent =
+                "Model loading failed ❌ Check console.";
+
+        }
+
+    }
+
+
+    imageInput.addEventListener("change", async function(event) {
+
+        if (!model) {
+
+            alert("Model is not loaded yet.");
+
+            return;
+
+        }
+
+
+        const file = event.target.files[0];
+
+        if (!file) {
+            return;
+        }
+
+
+        const imageURL = URL.createObjectURL(file);
+
+        testImage.src = imageURL;
+
+
+        testImage.onload = async function() {
+
+            try {
+
+                console.log("Running inference...");
+
+
+              const input = tf.tidy(() => {
+
+    const image = tf.browser
+        .fromPixels(testImage)
+        .resizeBilinear([224, 224])
+        .toFloat()
+        .div(255.0);
+
+    // NHWC: [224, 224, 3]
+    // Convert to NCHW: [3, 224, 224]
+    const chw = image.transpose([2, 0, 1]);
+
+    // Add batch dimension
+    // [3, 224, 224] → [1, 3, 224, 224]
+    return chw.expandDims(0);
+
+});
+                console.log("INPUT TENSOR:");
+
+                input.print();
+
+
+                console.log("Input shape:", input.shape);
+
+
+                const startTime = performance.now();
+
+
+                const output = model.predict(input);
+                const scores = await output.data();
+
+let maxIndex = 0;
+
+for (let i = 1; i < scores.length; i++) {
+    if (scores[i] > scores[maxIndex]) {
+        maxIndex = i;
+    }
+}
+
+console.log("BEST CLASS INDEX:", maxIndex);
+console.log("BEST RAW SCORE:", scores[maxIndex]);
+
+
+                const endTime = performance.now();
+
+
+                console.log(
+                    "Inference time:",
+                    (endTime - startTime).toFixed(2),
+                    "ms"
+                );
+
+
+                console.log("RAW OUTPUT:", output);
+
+
+                if (Array.isArray(output)) {
+
+                    output.forEach((tensor, index) => {
+
+                        console.log(
+                            "Output tensor",
+                            index,
+                            tensor.shape
+                        );
+
+                        tensor.print();
+
+                    });
+
+                } else {
+
+                    console.log("Output shape:", output.shape);
+
+                    output.print();
+
+                }
+
+
+                prediction.textContent =
+                    "Inference completed ✅\n\n" +
+                    "Inference time: " +
+                    (endTime - startTime).toFixed(2) +
+                    " ms\n\n" +
+                    "Open DevTools Console (F12) to inspect the full output.";
+
+
+                input.dispose();
+
+            } catch (error) {
+
+                console.error("INFERENCE ERROR:", error);
+
+                prediction.textContent =
+                    "Inference failed ❌\n\n" +
+                    error;
+
+            }
+
+        };
+
+    });
+
+
+    loadModel();
+
+</script>
+```
+
+</body>
+</html>

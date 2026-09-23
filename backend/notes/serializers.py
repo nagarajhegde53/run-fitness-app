@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Run
+from .models import Run,PushupActivity
 from datetime import timedelta
 from django.contrib.auth.models import User
 
@@ -81,5 +81,27 @@ class RunSerializer(serializers.ModelSerializer):
                 })
 
         return super().to_internal_value(data)
+
+
+
+#serializer for  pushups 
+class PushupActivitySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PushupActivity
+
+        fields = [
+            "id",
+            "user",
+            "target_reps",
+            "actual_reps",
+            "created_at",
+        ]
+
+        read_only_fields = [
+            "id",
+            "user",
+            "created_at",
+        ]
 
      

@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from .serializers import RunSerializer
-from .repositories import Runrepo
-from .services import RunService
+from .serializers import RunSerializer,PushupActivitySerializer
+from .repositories import Runrepo,PushupRepo
+from .services import RunService,PushupService
 
 
 
@@ -135,6 +135,43 @@ class BestRunView(APIView):
             seralizer=RunSerializer(run)
             return Response(seralizer.data,
                             status=status.HTTP_200_OK)
+
+
+#push up view 
+class PushupView(APIView):
+    permission_classes=[IsAuthenticated]
+    
+
+    def post(self,request):
+        serializer=PushupActivitySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        repository=PushupRepo()
+        service=PushupService(repository)
+        activity=service.create_activity(
+            request.user,
+            serializer.validated_data
+        )
+
+        return Response(
+            PushupActivitySerializer(activity).data,
+            status=status.HTTP_201_CREATED
+        )
+
+    def get(self,request):
+        repository=PushupRepo()
+
+        service=PushupService(repository)
+        activities=service.get_recent_activities(
+            request.user
+        )
+        serializer=PushupActivitySerializer(activities,
+                                            many=True)
+
+        return Response(serializer.data)
+
+
+
 
 
 

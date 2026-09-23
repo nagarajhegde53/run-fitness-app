@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+<title>RunTrack - Pushups</title>
+
+<link rel="stylesheet" href="css/pushups.css">
+
+
+</head>
+
+<body>
+
+<div class="bg-glow glow-one"></div>
+<div class="bg-glow glow-two"></div>
+
+<main class="pushup-app">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+
+        <button id="backToMenuBtn" class="back-btn" type="button">
+            <span>←</span>
+            <span>Menu</span>
+        </button>
+
+        <div class="page-title">
+            <span class="title-icon">💪</span>
+
+            <div>
+                <h1>Pushups</h1>
+                <p>AI Form Tracking</p>
+            </div>
+        </div>
+
+        <div id="workoutStatus" class="status-pill">
+            READY
+        </div>
+
+    </header>
+
+
+    <!-- GOAL SECTION -->
+    <section id="goalCard" class="card goal-card">
+
+        <div class="section-heading">
+
+            <div>
+                <span class="small-label">YOUR GOAL</span>
+                <h2>Choose your challenge</h2>
+            </div>
+
+            <div class="goal-display">
+                <strong id="selectedGoal">50</strong>
+                <span>REPS</span>
+            </div>
+
+        </div>
+
+
+        <div class="goal-grid">
+
+            <button
+                class="goal-option active"
+                data-goal="50"
+                type="button"
+            >
+                <strong>50</strong>
+                <span>Reps</span>
+            </button>
+
+
+            <button
+                class="goal-option"
+                data-goal="100"
+                type="button"
+            >
+                <strong>100</strong>
+                <span>Reps</span>
+            </button>
+
+
+            <button
+                class="goal-option"
+                data-goal="200"
+                type="button"
+            >
+                <strong>200</strong>
+                <span>Reps</span>
+            </button>
+
+
+            <button
+                id="customGoalBtn"
+                class="goal-option custom-goal-btn"
+                type="button"
+            >
+                <strong>+</strong>
+                <span>Custom</span>
+            </button>
+
+        </div>
+
+
+        <div
+            id="customGoalBox"
+            class="custom-goal-box"
+            hidden
+        >
+
+            <label for="customGoalInput">
+                Enter your goal
+            </label>
+
+            <div class="custom-input-row">
+
+                <input
+                    id="customGoalInput"
+                    type="number"
+                    min="1"
+                    max="10000"
+                    placeholder="Example: 75"
+                >
+
+                <button
+                    id="setCustomGoalBtn"
+                    type="button"
+                >
+                    Set Goal
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <button
+            id="startWorkoutBtn"
+            class="start-workout-btn"
+            type="button"
+        >
+            <span>▶</span>
+            <span>Start Pushups</span>
+        </button>
+
+    </section>
+
+
+    <!-- WORKOUT SECTION -->
+    <section
+        id="workoutCard"
+        class="card workout-card"
+        hidden
+    >
+
+        <div class="live-header">
+
+            <div class="live-title">
+                <span class="live-dot"></span>
+                <span>LIVE WORKOUT</span>
+            </div>
+
+            <span
+                id="targetBadge"
+                class="target-badge"
+            >
+                Goal: 50
+            </span>
+
+        </div>
+
+
+        <!-- COUNTER -->
+        <div class="rep-counter-section">
+
+            <span class="metric-label">
+                PUSHUPS
+            </span>
+
+            <div class="rep-number">
+
+                <strong id="pushupCount">
+                    0
+                </strong>
+
+                <span>
+                    /
+                    <span id="targetReps">
+                        50
+                    </span>
+                </span>
+
+            </div>
+
+
+            <div class="rep-progress">
+
+                <div
+                    id="repProgressFill"
+                    class="rep-progress-fill"
+                ></div>
+
+            </div>
+
+
+            <div class="progress-text">
+
+                <span>
+                    Progress
+                </span>
+
+                <strong id="progressPercent">
+                    0%
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- AI STATUS -->
+        <div
+            id="aiStatusCard"
+            class="ai-status-card"
+        >
+
+            <div class="ai-status-icon">
+                🤖
+            </div>
+
+            <div>
+
+                <span class="small-label">
+                    AI FORM CHECK
+                </span>
+
+                <strong id="aiStatus">
+                    Camera is off
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- CAMERA -->
+        <div class="camera-section">
+
+            <div
+                id="cameraPlaceholder"
+                class="camera-placeholder"
+            >
+
+                <div class="camera-placeholder-icon">
+                    📷
+                </div>
+
+                <strong>
+                    Camera is off
+                </strong>
+
+                <span>
+                    Click "Open Camera" to start AI tracking.
+                </span>
+
+            </div>
+
+
+            <div
+                id="cameraContainer"
+                class="camera-container"
+                hidden
+            >
+
+                <video
+                    id="cameraVideo"
+                    autoplay
+                    playsinline
+                    muted
+                ></video>
+
+
+                <div class="camera-overlay">
+
+                    <div class="camera-live">
+                        <span class="camera-live-dot"></span>
+                        LIVE
+                    </div>
+
+                    <span id="cameraAiText">
+                        AI ANALYZING
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- CAMERA BUTTONS -->
+        <div class="camera-controls">
+
+            <button
+                id="openCameraBtn"
+                class="open-camera-btn"
+                type="button"
+            >
+                📷 Open Camera
+            </button>
+
+
+            <button
+                id="closeCameraBtn"
+                class="close-camera-btn"
+                type="button"
+                hidden
+            >
+                ✕ Close Camera
+            </button>
+
+        </div>
+
+
+        <!-- WORKOUT BUTTONS -->
+        <div class="workout-controls">
+
+            <button
+                id="pauseBtn"
+                class="pause-btn"
+                type="button"
+                disabled
+            >
+
+                <span id="pauseIcon">
+                    ⏸
+                </span>
+
+                <span id="pauseText">
+                    Pause
+                </span>
+
+            </button>
+
+
+            <button
+                id="stopSaveBtn"
+                class="stop-save-btn"
+                type="button"
+                disabled
+            >
+                ■ Stop &amp; Save
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- SUCCESS -->
+    <section
+        id="successCard"
+        class="card success-card"
+        hidden
+    >
+
+        <div class="success-icon">
+            🎉
+        </div>
+
+        <h2>
+            Workout Saved!
+        </h2>
+
+        <p id="successMessage">
+            Great work!
+        </p>
+
+        <button
+            id="newWorkoutBtn"
+            type="button"
+        >
+            Start Another Workout
+        </button>
+
+    </section>
+
+
+    <!-- RECENT ACTIVITIES -->
+    <section class="card activities-card">
+
+        <div class="section-heading">
+
+            <div>
+
+                <span class="small-label">
+                    ACTIVITY
+                </span>
+
+                <h2>
+                    Recent Pushups
+                </h2>
+
+            </div>
+
+
+            <button
+                id="refreshActivitiesBtn"
+                class="refresh-btn"
+                type="button"
+                aria-label="Refresh activities"
+            >
+                ↻
+            </button>
+
+        </div>
+
+
+        <div id="recentActivities">
+
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    💪
+                </div>
+
+                <p>
+                    No activities yet
+                </p>
+
+                <span>
+                    Complete a workout and your recent pushups will appear here.
+                </span>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CAMERA INFO -->
+    <section class="camera-info">
+
+        <div class="info-icon">
+            💡
+        </div>
+
+        <div>
+
+            <strong>
+                Camera positioning
+            </strong>
+
+            <p>
+                Place your phone on a stable surface at a side angle.
+                Keep your head, shoulders, arms, hips and legs visible.
+            </p>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<!-- TensorFlow.js -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+
+<!-- TensorFlow Pose Detection -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite/dist/tf-tflite.min.js"></script>
+
+
+<!-- Your Pushup Logic -->
+<script src="js/pushups.js"></script>
+
+
+</body>
+</html>
