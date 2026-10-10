@@ -13,7 +13,7 @@ from .views import (
     RunView,
     BestRunView,
 )
-from .views import MeView,PushupView
+from .views import MeView,PushupView,ProfileView
 
 
 
@@ -28,6 +28,7 @@ urlpatterns = [
     path("runs/", RunView.as_view(), name="runs"),
      path("runs/best/", BestRunView.as_view(), name="best-run"),
      path("pushups/", PushupView.as_view()),
+     path("profile/", ProfileView.as_view(), name="profile"),
 
 
 ]

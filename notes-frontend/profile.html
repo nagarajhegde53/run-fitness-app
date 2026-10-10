@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>RunTrack | Profile</title>
+
+    <link rel="stylesheet" href="css/profile.css">
+</head>
+
+<body>
+
+    <div class="background-glow glow-one"></div>
+    <div class="background-glow glow-two"></div>
+
+    <main class="app">
+
+        <!-- HEADER -->
+
+        <header class="topbar">
+
+            <div class="brand">
+
+                <div class="brand-icon">
+                    🏃
+                </div>
+
+                <div>
+                    <h1>RunTrack</h1>
+                    <span>Fitness profile</span>
+                </div>
+
+            </div>
+
+            <button class="back-btn" id="backBtn">
+                <span>←</span>
+                Menu
+            </button>
+
+        </header>
+
+
+        <!-- PROFILE HERO -->
+
+        <section class="profile-hero">
+
+            <div class="profile-avatar" id="profileAvatar">
+                ?
+            </div>
+
+            <div class="profile-info">
+
+                <span class="eyebrow">
+                    YOUR PROFILE
+                </span>
+
+                <h2 id="username">
+                    Loading...
+                </h2>
+
+                <p>
+                    Keep moving. Keep building.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- STREAK + STRENGTH -->
+
+        <section class="main-stats">
+
+            <!-- STREAK -->
+
+            <article class="stat-card streak-card">
+
+                <div class="stat-card-top">
+
+                    <div class="stat-icon">
+                        🔥
+                    </div>
+
+                    <span class="stat-label">
+                        CURRENT STREAK
+                    </span>
+
+                </div>
+
+                <div class="stat-value-row">
+
+                    <strong id="streakValue">
+                        —
+                    </strong>
+
+                    <span>days</span>
+
+                </div>
+
+                <p id="streakMessage">
+                    Start your first workout.
+                </p>
+
+                <div class="streak-bar">
+
+                    <div
+                        class="streak-progress"
+                        id="streakProgress">
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- STRENGTH POINTS -->
+
+            <article class="stat-card strength-card">
+
+                <div class="stat-card-top">
+
+                    <div class="stat-icon">
+                        ⚡
+                    </div>
+
+                    <span class="stat-label">
+                        STRENGTH POINTS
+                    </span>
+
+                </div>
+
+                <div class="stat-value-row">
+
+                    <strong id="strengthPoints">
+                        —
+                    </strong>
+
+                    <span>SP</span>
+
+                </div>
+
+                <p id="strengthMessage">
+                    Your training power.
+                </p>
+
+                <div class="level-progress">
+
+                    <div
+                        class="level-progress-fill"
+                        id="levelProgress">
+                    </div>
+
+                </div>
+
+                <div class="level-info">
+
+                    <span id="currentLevel">
+                        Level 1
+                    </span>
+
+                    <span id="nextLevel">
+                        Next level
+                    </span>
+
+                </div>
+
+            </article>
+
+        </section>
+
+
+        <!-- LIFETIME STATS -->
+
+        <section class="stats-section">
+
+            <div class="section-title">
+
+                <span>LIFETIME</span>
+
+                <h3>Your training numbers</h3>
+
+            </div>
+
+
+            <div class="lifetime-grid">
+
+                <!-- PUSHUPS -->
+
+                <article class="lifetime-card">
+
+                    <div class="lifetime-icon">
+                        💪
+                    </div>
+
+                    <div class="lifetime-content">
+
+                        <span>
+                            PUSHUPS
+                        </span>
+
+                        <strong id="totalPushups">
+                            —
+                        </strong>
+
+                        <small>
+                            total reps
+                        </small>
+
+                    </div>
+
+                </article>
+
+
+                <!-- SQUATS -->
+
+                <article class="lifetime-card">
+
+                    <div class="lifetime-icon">
+                        🦵
+                    </div>
+
+                    <div class="lifetime-content">
+
+                        <span>
+                            SQUATS
+                        </span>
+
+                        <strong id="totalSquats">
+                            —
+                        </strong>
+
+                        <small>
+                            total reps
+                        </small>
+
+                    </div>
+
+                </article>
+
+
+                <!-- ACTIVE DAYS -->
+
+                <article class="lifetime-card">
+
+                    <div class="lifetime-icon">
+                        📅
+                    </div>
+
+                    <div class="lifetime-content">
+
+                        <span>
+                            ACTIVE DAYS
+                        </span>
+
+                        <strong id="activeDays">
+                            —
+                        </strong>
+
+                        <small>
+                            workout days
+                        </small>
+
+                    </div>
+
+                </article>
+
+
+                <!-- TOTAL RUNS -->
+
+                <article class="lifetime-card">
+
+                    <div class="lifetime-icon">
+                        🏃
+                    </div>
+
+                    <div class="lifetime-content">
+
+                        <span>
+                            RUNS
+                        </span>
+
+                        <strong id="totalRuns">
+                            —
+                        </strong>
+
+                        <small>
+                            completed runs
+                        </small>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+        </section>
+
+
+        <!-- RECENT ACTIVITY -->
+
+        <section class="activity-section">
+
+            <div class="section-title">
+
+                <span>ACTIVITY</span>
+
+                <h3>Recent workouts</h3>
+
+            </div>
+
+
+            <div class="activity-list" id="activityList">
+
+                <div class="activity-loading">
+
+                    <div class="loading-dot"></div>
+
+                    <span>
+                        Loading your activity...
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- MOTIVATION -->
+
+        <section class="motivation-card">
+
+            <div class="motivation-icon">
+                ⚡
+            </div>
+
+            <div>
+
+                <strong>
+                    Every workout counts.
+                </strong>
+
+                <p id="motivationText">
+                    Build your streak and become stronger one session at a time.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <footer>
+
+            <span>RunTrack</span>
+
+            <span>•</span>
+
+            <span>
+                Keep moving.
+            </span>
+
+        </footer>
+
+    </main>
+
+
+    <script src="js/profile.js"></script>
+
+</body>
+
+</html>
+

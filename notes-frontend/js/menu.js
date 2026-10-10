@@ -65,6 +65,12 @@ document.getElementById("squatBtn").addEventListener("click", () => {
 
 });
 
+const profileBtn = document.getElementById("profileBtn");
+
+profileBtn.addEventListener("click", () => {
+    window.location.href = "/profile.html";
+});
+
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {
 

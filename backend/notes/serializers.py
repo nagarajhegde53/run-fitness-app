@@ -104,4 +104,9 @@ class PushupActivitySerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["username"]
+
      

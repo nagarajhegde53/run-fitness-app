@@ -23,3 +23,8 @@ class PushupRepo:
         return PushupActivity.objects.filter(
             user=user
         ).order_by("-created_at")[:5]
+
+#for profile 
+class ProfileRepo:
+    def get_profile(self,user):
+        return user 

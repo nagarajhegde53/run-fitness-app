@@ -1,4 +1,4 @@
-from .repositories import Runrepo,PushupRepo
+from .repositories import Runrepo,PushupRepo,ProfileRepo
 
 class RunService:
     def __init__(self,repository:Runrepo):
@@ -27,6 +27,17 @@ class PushupService:
 
     def get_recent_activities(self,user):
         return self.repository.get_recent_activities(user)
+
+
+class ProfileService:
+    def __init__(self,repository:ProfileRepo):
+        self.repository=repository
+
+    def get_profile(self,user):
+        return self.repository.get_profile(user)
+    
+        
+
         
 
    

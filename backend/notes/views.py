@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from .serializers import RunSerializer,PushupActivitySerializer
-from .repositories import Runrepo,PushupRepo
-from .services import RunService,PushupService
+from .serializers import RunSerializer,PushupActivitySerializer,ProfileSerializer
+from .repositories import Runrepo,PushupRepo,ProfileRepo
+from .services import RunService,PushupService,ProfileService
 
 
 
@@ -171,6 +171,20 @@ class PushupView(APIView):
         return Response(serializer.data)
 
 
+#profile view 
+class ProfileView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def get(self,request):
+        repository=ProfileRepo()
+        service=ProfileService(repository)
+        info=service.get_profile(request.user)
+        seralizer=ProfileSerializer(info)
+        return Response(seralizer.data)
+
+
+
+
 
 
 
@@ -193,7 +207,7 @@ class PushupView(APIView):
 
 #     def get(self, request):
 #         return JsonResponse({"message": "CSRF Cookie Set"})
-    
+
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
 from rest_framework.views import APIView

@@ -153,7 +153,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5500",
-     "http://localhost:3000",  # Common for React
+     "http://localhost:3000",  
     "http://127.0.0.1:5173",
     #   "https://onrender.com",
      "https://run-fitness-app.onrender.com",
