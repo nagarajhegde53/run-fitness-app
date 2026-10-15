@@ -104,9 +104,9 @@ class PushupActivitySerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
-class ProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["username"]
-
+class ProfileSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    last_active = serializers.DateTimeField(allow_null=True)
+    total_pushups = serializers.IntegerField()
+    total_runs_km = serializers.FloatField()
      

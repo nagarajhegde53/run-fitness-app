@@ -178,9 +178,29 @@ class ProfileView(APIView):
     def get(self,request):
         repository=ProfileRepo()
         service=ProfileService(repository)
-        info=service.get_profile(request.user)
-        seralizer=ProfileSerializer(info)
+        username = request.user.username
+        last_active = service.get_last_active(request.user)
+        total_pushups = service.get_total_pushups(request.user)
+        total_runs_km = service.get_total_run_km(request.user) 
+        profile_data = {
+    "username": username,
+    "last_active": last_active,
+    "total_pushups": total_pushups,
+    "total_runs_km": total_runs_km
+}   
+        
+        seralizer=ProfileSerializer(profile_data)
         return Response(seralizer.data)
+
+class ActivityView(APIView):
+    permission_classes=[IsAuthenticated]
+    def post(self,request):
+        repo=ProfileRepo()
+        service=ProfileService(repo)
+        service.update_last_active(request.user)
+        return Response({
+            "message": "Activity updated"
+        })
 
 
 
@@ -197,16 +217,7 @@ class ProfileView(APIView):
 
 
 
-# from django.http import JsonResponse
-# from django.views.decorators.csrf import ensure_csrf_cookie
-# from django.utils.decorators import method_decorator
-# from rest_framework.views import APIView
 
-# @method_decorator(ensure_csrf_cookie, name="dispatch")
-# class CSRF(APIView):
-
-#     def get(self, request):
-#         return JsonResponse({"message": "CSRF Cookie Set"})
 
 from django.http import JsonResponse
 from django.middleware.csrf import get_token

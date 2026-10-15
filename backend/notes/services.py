@@ -36,6 +36,24 @@ class ProfileService:
     def get_profile(self,user):
         return self.repository.get_profile(user)
     
+    def get_total_run_km(self, user):
+        meters=self.repository.get_total_run_distance(user)
+        km=meters/1000
+        return round(km,2 )
+
+    def get_total_pushups(self, user):
+        pushups=self.repository.get_total_pushups(user)
+        return pushups
+
+    def update_last_active(self, user):
+        last=self.repository.update_last_active(user)
+        return last
+
+    def get_last_active(self, user):
+        last_active=self.repository.get_last_active(user)
+        return last_active
+
+    
         
 
         

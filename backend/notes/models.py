@@ -39,3 +39,12 @@ class PushupActivity(models.Model):
     target_reps = models.PositiveIntegerField()
     actual_reps = models.PositiveIntegerField()
     created_at=models.DateTimeField(auto_now_add=True)
+
+
+#user activity
+class UserActivity(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE
+    )
+    last_active_at = models.DateTimeField(null=True, blank=True)

@@ -16,6 +16,34 @@ async function getCSRFToken() {
 
     return csrftoken;
 }
+// activity saver
+async function updateLastActive() {
+    try {
+        const token = await getCSRFToken();
+
+        const response = await fetch(`${API_URL}/api/activity/`, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "X-CSRFToken": token
+            }
+        });
+
+        if (!response.ok) {
+            console.error(
+                "Activity update failed:",
+                await response.text()
+            );
+            return;
+        }
+
+        console.log("Last active updated successfully");
+
+    } catch (error) {
+        console.error("Activity update error:", error);
+    }
+}
+
 const API_URL = "https://run-fitness-app.onrender.com";
 
 
@@ -37,7 +65,9 @@ async function loadUser() {
         const data = await response.json();
 
         document.getElementById("welcomeMessage").textContent =
-            `Welcome, ${data.username} 👋`;
+            `Welcome, ${data.username} `;
+          
+        await updateLastActive();
 
     } catch (error) {
 
@@ -61,7 +91,7 @@ document.getElementById("pushupBtn").addEventListener("click", () => {
 
 document.getElementById("squatBtn").addEventListener("click", () => {
 
-    alert("🦵 Squat AI is coming soon!");
+    alert(" Squat AI is coming soon!");
 
 });
 
