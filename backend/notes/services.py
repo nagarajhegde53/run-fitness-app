@@ -1,4 +1,7 @@
 from .repositories import Runrepo,PushupRepo,ProfileRepo
+from django.utils import timezone
+from zoneinfo import ZoneInfo
+from datetime import timedelta
 
 class RunService:
     def __init__(self,repository:Runrepo):
@@ -52,6 +55,37 @@ class ProfileService:
     def get_last_active(self, user):
         last_active=self.repository.get_last_active(user)
         return last_active
+
+    def get_current_streak(self, user):
+        run_times, pushup_times = self.repository.get_workout_dates(user)
+        all_times = list(run_times) + list(pushup_times)
+        india_timezone = ZoneInfo("Asia/Kolkata")
+        workout_dates = set()
+       
+        for timestamp in all_times:
+            date= timezone.localdate(timestamp, timezone=india_timezone)
+            workout_dates.add(date)
+        if not workout_dates:
+            return 0
+        today=timezone.localdate(timezone=india_timezone)
+        last_workout=max(workout_dates)
+        days_since_workout = (today - last_workout).days
+        if days_since_workout > 1:
+              return 0
+        streak=0
+        current_date = last_workout
+        while current_date in workout_dates:
+            streak += 1
+            current_date -= timedelta(days=1)
+
+        return streak
+        
+          
+
+
+
+        
+
 
     
         

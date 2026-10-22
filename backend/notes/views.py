@@ -182,11 +182,13 @@ class ProfileView(APIView):
         last_active = service.get_last_active(request.user)
         total_pushups = service.get_total_pushups(request.user)
         total_runs_km = service.get_total_run_km(request.user) 
+        current_streak = service.get_current_streak(request.user)
         profile_data = {
     "username": username,
     "last_active": last_active,
     "total_pushups": total_pushups,
-    "total_runs_km": total_runs_km
+    "total_runs_km": total_runs_km,
+     "current_streak": current_streak
 }   
         
         seralizer=ProfileSerializer(profile_data)

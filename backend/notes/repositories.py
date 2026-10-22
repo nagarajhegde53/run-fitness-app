@@ -61,5 +61,17 @@ class ProfileRepo:
             return None 
         return activity.last_active_at
 
+    def get_workout_dates(self, user):
+        run_times=Run.objects.filter(user=user,
+                                     actual_distance__gt=0) .values_list("finished_at", flat=True)
+       
+
+        pushup_times = PushupActivity.objects.filter(
+        user=user,
+        actual_reps__gt=0
+).values_list("created_at", flat=True)
+        return run_times,pushup_times
+
+
        
 

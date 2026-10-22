@@ -80,9 +80,14 @@ async function loadProfile() {
         document.getElementById("lastActive").textContent =
             formatLastActive(data.last_active);
 
+        // Current workout streak
+        document.getElementById("streakValue").textContent =
+            data.current_streak ?? 0;
+
+
         // Not implemented yet
         document.getElementById("totalSquats").textContent = "—";
-        document.getElementById("streakValue").textContent = "—";
+       
         document.getElementById("strengthPoints").textContent = "—";
 
         // Recent activity API not implemented yet

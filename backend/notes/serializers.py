@@ -109,4 +109,6 @@ class ProfileSerializer(serializers.Serializer):
     last_active = serializers.DateTimeField(allow_null=True)
     total_pushups = serializers.IntegerField()
     total_runs_km = serializers.FloatField()
+    current_streak = serializers.IntegerField()
+
      
